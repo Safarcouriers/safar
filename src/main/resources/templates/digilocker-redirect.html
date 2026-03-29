@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" th:content="'0;url=saffaricarriers://digilocker-return?verificationId=' + ${verificationId}">
+    <title>Returning to App...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        #status {
+            font-size: 14px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .button {
+            display: inline-block;
+            background: white;
+            color: #E53935;
+            padding: 15px 35px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .verification-id {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="spinner"></div>
+    <h1>✅ Verification Complete!</h1>
+    <p>Your Aadhaar verification via DigiLocker was successful.</p>
+    <p id="status">Redirecting to Saffari Carriers app...</p>
+    <a href="#" id="manualLink" class="button" style="display:none">📱 Open App</a>
+    <p class="verification-id" th:text="'ID: ' + ${verificationId}"></p>
+</div>
+
+<script th:inline="javascript">
+        /*<![CDATA[*/
+        // Get verification ID from Thymeleaf
+        const verificationId = /*[[${verificationId}]]*/ 'UNKNOWN';
+
+        console.log('🔍 DigiLocker Redirect Page Loaded');
+        console.log('📝 Verification ID:', verificationId);
+
+        // Construct deep link
+        const deepLink = `saffaricarriers://digilocker-return?verificationId=${verificationId}`;
+        console.log('🔗 Deep Link:', deepLink);
+
+        // Method 1: Immediate redirect
+        console.log('🚀 Attempting immediate redirect...');
+        window.location.href = deepLink;
+
+        // Method 2: Fallback with window.open
+        setTimeout(() => {
+            console.log('🔄 Attempting window.open redirect...');
+            try {
+                window.open(deepLink, '_self');
+            } catch (e) {
+                console.error('❌ Failed to open deep link:', e);
+            }
+        }, 250);
+
+        // Method 3: Hidden iframe (works better on Android)
+        setTimeout(() => {
+            console.log('📱 Attempting iframe redirect...');
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+
+            setTimeout(() => {
+                try {
+                    document.body.removeChild(iframe);
+                } catch (e) {
+                    console.log('Iframe cleanup failed');
+                }
+            }, 1000);
+        }, 500);
+
+        // Show manual link after 2.5 seconds if redirect didn't work
+        setTimeout(() => {
+            console.log('⏱️ Showing manual link...');
+            const statusEl = document.getElementById('status');
+            const manualLink = document.getElementById('manualLink');
+
+            statusEl.innerHTML = '⚠️ Having trouble? Tap the button below to open the app.';
+            manualLink.style.display = 'inline-block';
+            manualLink.href = deepLink;
+
+            manualLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('👆 Manual link clicked');
+                window.location.href = deepLink;
+            });
+        }, 2500);
+
+        // Listen for page visibility to detect if app opened
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('✅ App likely opened (page hidden)');
+            }
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>

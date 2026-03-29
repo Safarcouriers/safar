@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saffari Carriers — Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0e11;
+    --surface: #141518;
+    --surface2: #1c1d22;
+    --surface3: #232428;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f0;
+    --muted: #888a93;
+    --accent: #e8ff57;
+    --accent-dim: rgba(232,255,87,0.12);
+    --accent-border: rgba(232,255,87,0.3);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.12);
+    --red: #f56565;
+    --red-dim: rgba(245,101,101,0.12);
+    --orange: #f6a623;
+    --orange-dim: rgba(246,166,35,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --sidebar: 220px;
+    --nav-h: 56px;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .logo {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; color: #0d0e11;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 10px; color: var(--muted); font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+  .nav-section { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 10px 4px; font-weight: 500; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 7px;
+    color: var(--muted); font-size: 13px; font-weight: 400;
+    cursor: pointer; transition: all 0.15s; margin-bottom: 1px;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+  .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 12px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .admin-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 7px;
+    background: var(--surface2);
+  }
+  .admin-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--purple-dim); border: 1px solid var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--purple); font-weight: 600;
+  }
+  .admin-name { font-size: 12px; font-weight: 500; }
+  .admin-role { font-size: 10px; color: var(--muted); }
+
+  /* MAIN */
+  .main {
+    margin-left: var(--sidebar);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    height: var(--nav-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    padding: 7px 14px; border-radius: 7px;
+    font-size: 12px; font-weight: 500; font-family: var(--font);
+    cursor: pointer; transition: all 0.15s; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--muted);
+  }
+  .btn:hover { background: var(--surface3); color: var(--text); }
+  .btn-accent { background: var(--accent); color: #0d0e11; border-color: var(--accent); }
+  .btn-accent:hover { background: #d4eb44; color: #0d0e11; }
+
+  .refresh-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    display: inline-block; margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* CONTENT */
+  .content { padding: 24px; display: none; }
+  .content.active { display: block; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-title { font-size: 18px; font-weight: 600; }
+  .section-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; gap: 12px; margin-bottom: 24px; }
+  .stats-4 { grid-template-columns: repeat(4, 1fr); }
+  .stats-3 { grid-template-columns: repeat(3, 1fr); }
+  .stats-2 { grid-template-columns: repeat(2, 1fr); }
+  .stats-6 { grid-template-columns: repeat(3, 1fr); }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.accent::before { background: var(--accent); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.orange::before { background: var(--orange); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.purple::before { background: var(--purple); }
+
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 600; line-height: 1; font-family: var(--mono); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 500; }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-orange { background: var(--orange-dim); color: var(--orange); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+  .badge-purple { background: var(--purple-dim); color: var(--purple); }
+  .badge-accent { background: var(--accent-dim); color: var(--accent); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; margin-bottom: 16px;
+    color: var(--text); display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title span { color: var(--muted); font-weight: 400; font-size: 11px; }
+
+  /* CHARTS */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-full { grid-column: 1 / -1; }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { color: var(--muted); font-weight: 500; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* STATUS PILLS */
+  .status { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; }
+  .status-delivered { background: var(--green-dim); color: var(--green); }
+  .status-pending { background: var(--orange-dim); color: var(--orange); }
+  .status-transit { background: var(--blue-dim); color: var(--blue); }
+  .status-cancelled { background: var(--red-dim); color: var(--red); }
+  .status-verified { background: var(--green-dim); color: var(--green); }
+  .status-unverified { background: var(--red-dim); color: var(--red); }
+
+  /* PROGRESS BAR */
+  .prog-row { margin-bottom: 12px; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+  .prog-label span:first-child { color: var(--text); }
+  .prog-label span:last-child { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+  .prog-bar { height: 4px; background: var(--surface3); border-radius: 2px; }
+  .prog-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+  /* TWO COL LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* KV ROWS */
+  .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .kv-row:last-child { border-bottom: none; }
+  .kv-row .kv-k { color: var(--muted); }
+  .kv-row .kv-v { font-family: var(--mono); font-size: 12px; }
+
+  /* TODAY HIGHLIGHT */
+  .today-card {
+    background: linear-gradient(135deg, rgba(232,255,87,0.08) 0%, rgba(62,207,142,0.06) 100%);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .today-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 12px; }
+  .today-item { text-align: center; }
+  .today-val { font-size: 22px; font-weight: 600; font-family: var(--mono); color: var(--accent); }
+  .today-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+  /* NOTIFICATION */
+  .notif {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px; font-size: 13px;
+  }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* DONUT CONTAINER */
+  .donut-wrap { position: relative; width: 160px; height: 160px; margin: 0 auto; }
+  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+  .donut-center-val { font-size: 22px; font-weight: 600; font-family: var(--mono); }
+  .donut-center-lbl { font-size: 10px; color: var(--muted); }
+  .donut-legend { margin-top: 16px; }
+  .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; justify-content: space-between; }
+  .donut-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .donut-legend-label { flex: 1; color: var(--muted); }
+  .donut-legend-val { font-family: var(--mono); font-size: 11px; color: var(--text); }
+
+  /* NOTIFICATION FORM */
+  .notif-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%; padding: 11px 14px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--font); font-size: 14px;
+    outline: none; transition: border-color .15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+  .type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .type-option { position: relative; }
+  .type-option input[type=radio] { position: absolute; opacity: 0; width: 0; }
+  .type-label {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 14px 10px; border-radius: var(--radius);
+    border: 1px solid var(--border2); background: var(--surface2);
+    cursor: pointer; transition: all .15s; text-align: center;
+  }
+  .type-label:hover { border-color: var(--border); background: var(--surface3); }
+  .type-option input:checked + .type-label {
+    border-color: var(--accent); background: var(--accent-dim);
+    color: var(--accent);
+  }
+  .type-icon { font-size: 18px; line-height: 1; }
+  .type-name { font-size: 12px; font-weight: 500; }
+  .type-count { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+  .type-option input:checked + .type-label .type-count { color: var(--accent); opacity: .7; }
+  .send-btn {
+    width: 100%; padding: 14px;
+    background: var(--accent); color: #0d0e11;
+    border: none; border-radius: var(--radius);
+    font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .send-btn:hover { background: #d4eb44; }
+  .send-btn:disabled { background: var(--surface3); color: var(--muted); cursor: not-allowed; }
+  .send-btn .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #0d0e11; border-radius: 50%;
+    animation: spin .6s linear infinite; display: none;
+  }
+  .send-btn.loading .spinner { display: block; }
+  .send-btn.loading .btn-text { opacity: .6; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESULT CARD */
+  .result-card {
+    border-radius: var(--radius-lg); padding: 20px;
+    margin-bottom: 20px; display: none;
+    border: 1px solid;
+  }
+  .result-card.success { background: var(--green-dim); border-color: rgba(62,207,142,0.3); }
+  .result-card.error { background: var(--red-dim); border-color: rgba(245,101,101,0.3); }
+  .result-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .result-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .result-stat { text-align: center; }
+  .result-stat-val { font-size: 24px; font-weight: 600; font-family: var(--mono); }
+  .result-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+
+  /* HISTORY */
+  .history-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .history-title { font-size: 13px; font-weight: 500; }
+  .history-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .history-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+  /* API STATUS BAR */
+  .api-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px; font-size: 11px; color: var(--muted);
+  }
+  .api-endpoint { font-family: var(--mono); color: var(--text); font-size: 11px; }
+  .api-method { background: var(--green-dim); color: var(--green); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-mark">SC</div>
+        <div>
+            <div class="logo-text">Saffari</div>
+            <div class="logo-sub">Admin Panel</div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-section">Overview</div>
+        <button class="nav-item active" onclick="showPage('dashboard', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/></svg>
+            Dashboard
+        </button>
+        <button class="nav-item" onclick="showPage('analytics', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 12 L5 8 L8 10 L11 5 L14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Analytics
+        </button>
+
+        <div class="nav-section">Logistics</div>
+        <button class="nav-item" onclick="showPage('deliveries', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 8h2.5l1.5 2v3h-4V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="4" cy="13.5" r="1.2" fill="currentColor"/><circle cx="12" cy="13.5" r="1.2" fill="currentColor"/></svg>
+            Deliveries
+        </button>
+        <button class="nav-item" onclick="showPage('packages', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 3V7l2.5-1.5L10.5 7V3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            Packages
+        </button>
+
+        <div class="nav-section">People</div>
+        <button class="nav-item" onclick="showPage('users', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="5" r="1.8" stroke="currentColor" stroke-width="1.2"/><path d="M12.5 9.5c1.5.3 2.5 1.5 2.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Users
+        </button>
+        <button class="nav-item" onclick="showPage('verification', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 4v4c0 3.5 2.5 6.3 6 7 3.5-.7 6-3.5 6-7V4L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5 8l2 2 4-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Verification
+        </button>
+
+        <div class="nav-section">Engage</div>
+        <button class="nav-item" onclick="showPage('notifications', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a5 5 0 0 1 5 5v2.5l1 2H2l1-2V6.5a5 5 0 0 1 5-5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Notifications
+        </button>
+
+        <div class="nav-section">Finance</div>
+        <button class="nav-item" onclick="showPage('revenue', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5v7M6 6.5c0-1.1.9-2 2-2s2 .9 2 2c0 1.1-1.6 2-2 2s-2 .9-2 2 .9 2 2 2 2-.9 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Revenue
+        </button>
+        <button class="nav-item" onclick="showPage('commission', this)">
+            <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 12h2l2-4 2 6 2-8 2 6h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Commission
+        </button>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="admin-pill">
+            <div class="admin-avatar">AD</div>
+            <div>
+                <div class="admin-name">Admin</div>
+                <div class="admin-role">Super Admin</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="topbar-actions">
+            <div style="font-size:12px; color: var(--muted); font-family: var(--mono)" id="lastUpdate">—</div>
+            <button class="btn" onclick="loadDashboard()"><span class="refresh-dot"></span>Refresh</button>
+            <button class="btn btn-accent" onclick="exportCSV()">Export CSV</button>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD PAGE ===== -->
+    <div class="content active" id="page-dashboard">
+        <div style="padding-top:4px">
+
+            <!-- TODAY STRIP -->
+            <div class="today-card">
+                <div style="display:flex; align-items:center; justify-content:space-between">
+                    <div>
+                        <div style="font-size:12px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:.08em">Today's Overview</div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:2px" id="todayDate">—</div>
+                    </div>
+                    <div class="badge badge-accent" id="todayStatus">Live</div>
+                </div>
+                <div class="today-grid" id="todayGrid">
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">Packages</div></div>
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">Requests</div></div>
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">Delivered</div></div>
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">Revenue</div></div>
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">New Users</div></div>
+                    <div class="today-item"><div class="today-val">—</div><div class="today-lbl">Active Trips</div></div>
+                </div>
+            </div>
+
+            <!-- KEY METRICS -->
+            <div class="stats-grid stats-4" id="mainStats">
+                <div class="stat-card green"><div class="stat-label">Total Users</div><div class="stat-value" id="s-totalUsers">—</div><div class="stat-sub"><span class="badge badge-green" id="s-verifiedBadge">—</span> verified</div></div>
+                <div class="stat-card accent"><div class="stat-label">Total Packages</div><div class="stat-value" id="s-totalPkgs">—</div><div class="stat-sub"><span class="badge badge-accent" id="s-deliveredBadge">—</span> delivered</div></div>
+                <div class="stat-card blue"><div class="stat-label">Delivery Requests</div><div class="stat-value" id="s-totalReqs">—</div><div class="stat-sub"><span class="badge badge-blue" id="s-successRate">—</span> success rate</div></div>
+                <div class="stat-card orange"><div class="stat-label">Pending Commission</div><div class="stat-value" id="s-pendingComm">—</div><div class="stat-sub"><span class="badge badge-orange" id="s-carriersBadge">—</span> carriers pending</div></div>
+            </div>
+
+            <!-- CHARTS ROW -->
+            <div class="charts-row">
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-title">Delivery status breakdown <span id="deliveryTotal">—</span></div>
+                    <div style="display:flex; align-items:center; gap:24px">
+                        <div class="donut-wrap">
+                            <canvas id="deliveryDonut"></canvas>
+                            <div class="donut-center">
+                                <div class="donut-center-val" id="donut-center-val">—</div>
+                                <div class="donut-center-lbl">total</div>
+                            </div>
+                        </div>
+                        <div class="donut-legend" id="deliveryLegend"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-title">User breakdown <span id="userTotal">—</span></div>
+                    <div style="display:flex; align-items:center; gap:24px">
+                        <div class="donut-wrap">
+                            <canvas id="userDonut"></canvas>
+                            <div class="donut-center">
+                                <div class="donut-center-val" id="user-donut-val">—</div>
+                                <div class="donut-center-lbl">users</div>
+                            </div>
+                        </div>
+                        <div class="donut-legend" id="userLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PACKAGE STATUS PROGRESS -->
+            <div class="card">
+                <div class="card-title">Package pipeline</div>
+                <div id="packageProgress"></div>
+            </div>
+
+            <!-- BOTTOM ROW -->
+            <div class="two-col">
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-title">Carrier stats</div>
+                    <div id="carrierStats"></div>
+                </div>
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-title">Verification status</div>
+                    <div id="verificationMini"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ANALYTICS PAGE ===== -->
+    <div class="content" id="page-analytics">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Analytics</div>
+                <div class="section-sub">Day-wise breakdown — last 30 days</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn" onclick="loadAnalytics(7)">7d</button>
+                <button class="btn" onclick="loadAnalytics(14)">14d</button>
+                <button class="btn btn-accent" onclick="loadAnalytics(30)">30d</button>
+            </div>
+        </div>
+
+        <div class="card chart-full">
+            <div class="card-title">Daily deliveries completed</div>
+            <div style="position:relative;height:200px"><canvas id="deliveriesChart"></canvas></div>
+        </div>
+
+        <div class="charts-row">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Daily revenue (₹)</div>
+                <div style="position:relative;height:180px"><canvas id="revenueChart"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">New users per day</div>
+                <div style="position:relative;height:180px"><canvas id="usersChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Packages created per day</div>
+            <div style="position:relative;height:180px"><canvas id="packagesChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ===== DELIVERIES PAGE ===== -->
+    <div class="content" id="page-deliveries">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Deliveries</div>
+                <div class="section-sub">All delivery requests</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-accent" onclick="loadDeliveries('pending')">Pending</button>
+                <button class="btn" onclick="loadDeliveries('completed')">Completed</button>
+            </div>
+        </div>
+
+        <div class="stats-grid stats-4" style="margin-bottom:20px" id="deliveryStats"></div>
+
+        <div class="card">
+            <div class="card-title" id="deliveryTableTitle">Pending deliveries</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#ID</th><th>Package</th><th>Sender</th><th>Carrier</th><th>Route</th><th>Amount</th><th>Status</th><th>Requested</th>
+                    </tr>
+                    </thead>
+                    <tbody id="deliveryTableBody">
+                    <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PACKAGES PAGE ===== -->
+    <div class="content" id="page-packages">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Packages</div>
+                <div class="section-sub">Package pipeline overview</div>
+            </div>
+        </div>
+
+        <div id="pkgStats" class="stats-grid stats-4" style="margin-bottom:20px"></div>
+
+        <div class="two-col">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">By product type</div>
+                <div style="position:relative;height:220px"><canvas id="productTypeChart"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">By transport type</div>
+                <div style="position:relative;height:220px"><canvas id="transportChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+            <div class="card-title">Insurance breakdown</div>
+            <div id="insuranceStats"></div>
+        </div>
+    </div>
+
+    <!-- ===== USERS PAGE ===== -->
+    <div class="content" id="page-users">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Users</div>
+                <div class="section-sub">User registry</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-accent" onclick="loadUserList('verified')">Verified</button>
+                <button class="btn" onclick="loadUserList('unverified')">Unverified</button>
+            </div>
+        </div>
+
+        <div id="userStatsCards" class="stats-grid stats-4" style="margin-bottom:20px"></div>
+
+        <div class="charts-row">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Gender breakdown</div>
+                <div style="position:relative;height:200px"><canvas id="genderChart"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">User type breakdown</div>
+                <div style="position:relative;height:200px"><canvas id="userTypeChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+            <div class="card-title" id="userTableTitle">Verified users</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr><th>Name</th><th>Mobile</th><th>Email</th><th>Type</th><th>Status</th><th>Verification</th><th>Joined</th></tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                    <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== VERIFICATION PAGE ===== -->
+    <div class="content" id="page-verification">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Verification</div>
+                <div class="section-sub">Document verification status</div>
+            </div>
+        </div>
+        <div id="verifyCards" class="stats-grid stats-3" style="margin-bottom:20px"></div>
+        <div class="two-col">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Verification by type</div>
+                <div style="position:relative;height:220px"><canvas id="verifyTypeChart"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Users stuck at stage</div>
+                <div id="stuckUsers" style="padding-top:8px"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== REVENUE PAGE ===== -->
+    <div class="content" id="page-revenue">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Revenue</div>
+                <div class="section-sub">Platform revenue overview</div>
+            </div>
+        </div>
+        <div class="notif">
+            <div class="notif-dot" style="background:var(--orange)"></div>
+            <div>Revenue aggregation is active. Real-time data pulled from <span style="font-family:var(--mono); color:var(--text)">GET /api/v1/admin/dashboard/revenue/stats</span></div>
+        </div>
+        <div id="revenueCards" class="stats-grid stats-3" style="margin-bottom:20px"></div>
+        <div class="card">
+            <div class="card-title">30-day revenue trend</div>
+            <div style="position:relative;height:220px"><canvas id="revenueFullChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ===== COMMISSION PAGE ===== -->
+    <div class="content" id="page-commission">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Commission</div>
+                <div class="section-sub">Carrier commission management</div>
+            </div>
+        </div>
+        <div id="commissionCards" class="stats-grid stats-3" style="margin-bottom:20px"></div>
+        <div class="two-col">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Carrier status</div>
+                <div style="position:relative;height:200px"><canvas id="carrierStatusChart"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0">
+                <div class="card-title">Commission summary</div>
+                <div id="commSummary" style="padding-top:8px"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NOTIFICATIONS PAGE ===== -->
+    <div class="content" id="page-notifications">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Notifications</div>
+                <div class="section-sub">Send push notifications via Firebase</div>
+            </div>
+        </div>
+
+        <!-- RESULT CARD -->
+        <div class="result-card" id="notifResult">
+            <div class="result-title" id="notifResultTitle"></div>
+            <div class="result-stats" id="notifResultStats"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 360px; gap:20px; align-items:start">
+
+            <!-- FORM -->
+            <div class="notif-form-card">
+                <div style="font-size:15px; font-weight:600; margin-bottom:24px">Compose notification</div>
+
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input class="form-input" id="notifTitle" type="text" placeholder="e.g. New feature available!" maxlength="100">
+                    <div style="font-size:11px; color:var(--muted); margin-top:5px; text-align:right"><span id="titleCount">0</span>/100</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Message body</label>
+                    <textarea class="form-input form-textarea" id="notifBody" placeholder="Write your message here…" maxlength="300"></textarea>
+                    <div style="font-size:11px; color:var(--muted); margin-top:5px; text-align:right"><span id="bodyCount">0</span>/300</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Send to</label>
+                    <div class="type-grid">
+                        <div class="type-option">
+                            <input type="radio" name="userType" id="typeAll" value="ALL" checked>
+                            <label class="type-label" for="typeAll" onclick="previewCount('ALL')">
+                                <div class="type-icon">👥</div>
+                                <div class="type-name">All users</div>
+                                <div class="type-count" id="count-ALL">— users</div>
+                            </label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" name="userType" id="typeSender" value="SENDER">
+                            <label class="type-label" for="typeSender" onclick="previewCount('SENDER')">
+                                <div class="type-icon">📦</div>
+                                <div class="type-name">Senders</div>
+                                <div class="type-count" id="count-SENDER">— users</div>
+                            </label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" name="userType" id="typeCarrier" value="CARRIER">
+                            <label class="type-label" for="typeCarrier" onclick="previewCount('CARRIER')">
+                                <div class="type-icon">🚚</div>
+                                <div class="type-name">Carriers</div>
+                                <div class="type-count" id="count-CARRIER">— users</div>
+                            </label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" name="userType" id="typeBoth" value="BOTH">
+                            <label class="type-label" for="typeBoth" onclick="previewCount('BOTH')">
+                                <div class="type-icon">🔄</div>
+                                <div class="type-name">Both</div>
+                                <div class="type-count" id="count-BOTH">— users</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREVIEW STRIP -->
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:20px; font-size:12px; display:flex; align-items:center; justify-content:space-between">
+                    <span style="color:var(--muted)">Will reach approximately</span>
+                    <span style="font-family:var(--mono); font-size:14px; color:var(--accent)" id="targetPreview">—</span>
+                </div>
+
+                <button class="send-btn" id="sendBtn" onclick="sendNotification()">
+                    <div class="spinner" id="sendSpinner"></div>
+                    <span class="btn-text">Send notification</span>
+                </button>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div>
+                <!-- PHONE PREVIEW -->
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-title">Preview</div>
+                    <div style="background:var(--surface2); border-radius:12px; padding:14px; border:1px solid var(--border)">
+                        <div style="display:flex; align-items:flex-start; gap:10px">
+                            <div style="width:36px; height:36px; border-radius:8px; background:var(--accent-dim); border:1px solid var(--accent-border); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0">SC</div>
+                            <div style="flex:1; min-width:0">
+                                <div style="font-size:12px; font-weight:600; margin-bottom:3px" id="prevTitle">Notification title</div>
+                                <div style="font-size:11px; color:var(--muted); line-height:1.5; word-break:break-word" id="prevBody">Your message will appear here…</div>
+                                <div style="font-size:10px; color:var(--muted); margin-top:6px">Saffari Carriers · now</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIPS -->
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-title">Tips</div>
+                    <div style="font-size:12px; color:var(--muted); line-height:1.8">
+                        <div style="margin-bottom:6px">✓ Keep title under 50 chars for best display</div>
+                        <div style="margin-bottom:6px">✓ Body should be actionable, not just informational</div>
+                        <div style="margin-bottom:6px">✓ Users with no FCM token (never opened app) are skipped automatically</div>
+                        <div>✓ FCM failures are logged server-side — check Spring Boot logs</div>
+                    </div>
+                </div>
+
+                <!-- HISTORY -->
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-title">Sent this session <span id="historyCount">0</span></div>
+                    <div id="notifHistory">
+                        <div style="font-size:12px; color:var(--muted); padding:12px 0; text-align:center">No notifications sent yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+const BASE = 'https://apisafarepackers.lytortech.com/api/v1/admin/dashboard';
+let _dash = null;
+let _charts = {};
+
+function destroyChart(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+function makeChart(id, config) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  _charts[id] = new Chart(ctx, config);
+  return _charts[id];
+}
+
+async function api(path) {
+  const r = await fetch(BASE + path);
+  const j = await r.json();
+  return j.data || j;
+}
+
+function fmt(n) {
+  if (n === null || n === undefined) return '—';
+  if (n >= 10000000) return '₹' + (n/10000000).toFixed(1) + 'Cr';
+  if (n >= 100000) return '₹' + (n/100000).toFixed(1) + 'L';
+  if (n >= 1000) return n.toLocaleString('en-IN');
+  return String(Math.round(n));
+}
+
+function fmtMoney(n) {
+  if (!n) return '₹0';
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+}
+
+function statusPill(s) {
+  if (!s) return '—';
+  const map = {
+    DELIVERED:'delivered', PENDING:'pending', IN_TRANSIT:'transit',
+    CANCELLED:'cancelled', ACCEPTED:'transit', PICKED_UP:'transit',
+    ACTIVE:'verified', INACTIVE:'cancelled', SUSPENDED:'cancelled'
+  };
+  return `<span class="status status-${map[s]||'pending'}">${s.replace('_',' ')}</span>`;
+}
+
+function showPage(id, el) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard', analytics:'Analytics', deliveries:'Deliveries',
+    packages:'Packages', users:'Users', verification:'Verification',
+    revenue:'Revenue', commission:'Commission', notifications:'Notifications'
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+  if (id === 'analytics') loadAnalytics(30);
+  if (id === 'deliveries') loadDeliveriesPage();
+  if (id === 'packages') loadPackagesPage();
+  if (id === 'users') loadUsersPage();
+  if (id === 'verification') loadVerificationPage();
+  if (id === 'revenue') loadRevenuePage();
+  if (id === 'commission') loadCommissionPage();
+  if (id === 'notifications') loadNotificationsPage();
+}
+
+// ========== DASHBOARD ==========
+async function loadDashboard() {
+  document.getElementById('lastUpdate').textContent = 'Loading…';
+  try {
+    const data = await api('');
+    _dash = data;
+    renderDashboard(data);
+    document.getElementById('lastUpdate').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-IN');
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderDashboard(d) {
+  const t = d.todayOverview || {};
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const tg = document.getElementById('todayGrid');
+  const todayVals = [
+    [t.packagesCreatedToday, 'Packages'],
+    [t.requestsCreatedToday, 'Requests'],
+    [t.deliveriesCompletedToday, 'Delivered'],
+    [fmtMoney(t.revenueToday), 'Revenue'],
+    [t.newUsersToday, 'New Users'],
+    [t.activeTripsToday, 'Active Trips']
+  ];
+  tg.innerHTML = todayVals.map(([v,l]) => `
+    <div class="today-item">
+      <div class="today-val">${v !== undefined && v !== null ? v : '—'}</div>
+      <div class="today-lbl">${l}</div>
+    </div>`).join('');
+
+  const u = d.userStats || {};
+  const del = d.deliveryStats || {};
+  const pkg = d.packageStats || {};
+  const com = d.commissionStats || {};
+
+  document.getElementById('s-totalUsers').textContent = fmt(u.totalUsers);
+  document.getElementById('s-verifiedBadge').textContent = fmt(u.verifiedUsers);
+  document.getElementById('s-totalPkgs').textContent = fmt(pkg.totalPackages);
+  document.getElementById('s-deliveredBadge').textContent = fmt(pkg.deliveredPackages);
+  document.getElementById('s-totalReqs').textContent = fmt(del.totalRequests);
+  document.getElementById('s-successRate').textContent = (del.deliverySuccessRate || 0).toFixed(1) + '%';
+  document.getElementById('s-pendingComm').textContent = fmtMoney(com.totalPendingCommission);
+  document.getElementById('s-carriersBadge').textContent = fmt(com.carriersWithPendingCommission);
+
+  renderDeliveryDonut(del);
+  renderUserDonut(u);
+  renderPackageProgress(pkg);
+  renderCarrierStats(com);
+  renderVerificationMini(d.verificationStats || {});
+}
+
+function renderDeliveryDonut(del) {
+  const labels = ['Delivered','Pending','In Transit','Accepted','Rejected','Cancelled'];
+  const vals = [del.deliveredRequests,del.pendingRequests,del.inTransitRequests,
+                del.acceptedRequests,del.rejectedRequests,del.cancelledRequests];
+  const colors = ['#3ecf8e','#f6a623','#60a5fa','#a78bfa','#f56565','#888a93'];
+  const total = vals.reduce((a,b)=>(a||0)+(b||0),0);
+  document.getElementById('donut-center-val').textContent = total || '0';
+
+  makeChart('deliveryDonut', {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` }
+      }}
+    }
+  });
+
+  const legend = document.getElementById('deliveryLegend');
+  legend.innerHTML = labels.map((l,i) => `
+    <div class="donut-legend-item">
+      <div class="donut-swatch" style="background:${colors[i]}"></div>
+      <span class="donut-legend-label">${l}</span>
+      <span class="donut-legend-val">${vals[i]||0}</span>
+    </div>`).join('');
+}
+
+function renderUserDonut(u) {
+  const labels = ['Sender','Carrier','Both'];
+  const vals = [u.senderUsers, u.carrierUsers, u.bothUsers];
+  const colors = ['#60a5fa','#3ecf8e','#a78bfa'];
+  document.getElementById('user-donut-val').textContent = u.totalUsers || '0';
+  document.getElementById('userTotal').textContent = `${u.verifiedUsers||0} verified`;
+
+  makeChart('userDonut', {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  document.getElementById('userLegend').innerHTML = labels.map((l,i) => `
+    <div class="donut-legend-item">
+      <div class="donut-swatch" style="background:${colors[i]}"></div>
+      <span class="donut-legend-label">${l}</span>
+      <span class="donut-legend-val">${vals[i]||0}</span>
+    </div>`).join('');
+}
+
+function renderPackageProgress(pkg) {
+  const stages = [
+    ['Created',pkg.createdPackages,'#888a93'],
+    ['Request Sent',pkg.requestSentPackages,'#60a5fa'],
+    ['Matched',pkg.matchedPackages,'#a78bfa'],
+    ['Picked Up',pkg.pickedUpPackages,'#f6a623'],
+    ['In Transit',pkg.inTransitPackages,'#e8ff57'],
+    ['Delivered',pkg.deliveredPackages,'#3ecf8e'],
+    ['Cancelled',pkg.cancelledPackages,'#f56565'],
+  ];
+  const total = pkg.totalPackages || 1;
+  document.getElementById('packageProgress').innerHTML = stages.map(([l,v,c]) => `
+    <div class="prog-row">
+      <div class="prog-label"><span>${l}</span><span>${v||0} / ${total}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(((v||0)/total)*100)}%;background:${c}"></div></div>
+    </div>`).join('');
+}
+
+function renderCarrierStats(com) {
+  const items = [
+    ['Active carriers', com.activeCarriers, 'var(--green)'],
+    ['Inactive carriers', com.inactiveCarriers, 'var(--muted)'],
+    ['Suspended', com.suspendedCarriers, 'var(--red)'],
+    ['Total earnings', fmtMoney(com.totalCarrierEarnings), 'var(--accent)'],
+    ['Daily commission', fmtMoney(com.dailyCommission), 'var(--blue)'],
+  ];
+  document.getElementById('carrierStats').innerHTML = items.map(([k,v,c]) => `
+    <div class="kv-row">
+      <span class="kv-k">${k}</span>
+      <span class="kv-v" style="color:${c}">${v!==undefined?v:'—'}</span>
+    </div>`).join('');
+}
+
+function renderVerificationMini(v) {
+  const items = [
+    ['Total verifications', v.totalVerifications],
+    ['Verified docs', v.verifiedDocuments],
+    ['Pending', v.pendingVerifications],
+    ['Rejected', v.rejectedDocuments],
+    ['Aadhaar', v.aadhaarVerifications],
+    ['PAN', v.panVerifications],
+  ];
+  document.getElementById('verificationMini').innerHTML = items.map(([k,val]) => `
+    <div class="kv-row">
+      <span class="kv-k">${k}</span>
+      <span class="kv-v">${val!==undefined?val:'—'}</span>
+    </div>`).join('');
+}
+
+// ========== ANALYTICS ==========
+async function loadAnalytics(days) {
+  try {
+    const data = await api(`/analytics/daywise?days=${days}`);
+    const rows = data.dayWiseData || [];
+    const labels = rows.map(r => r.date);
+    const getVals = key => rows.map(r => r[key] || 0);
+
+    const barCfg = (label, data, color) => ({
+      type: 'bar',
+      data: { labels, datasets: [{ label, data, backgroundColor: color + '99', borderColor: color, borderWidth: 1, borderRadius: 3 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#888a93', font: { size: 10 }, maxRotation: 45 } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#888a93', font: { size: 10 } } }
+        }
+      }
+    });
+
+    makeChart('deliveriesChart', barCfg('Deliveries', getVals('deliveriesCompleted'), '#3ecf8e'));
+    makeChart('revenueChart', barCfg('Revenue', getVals('revenue'), '#e8ff57'));
+    makeChart('usersChart', barCfg('New Users', getVals('newUsers'), '#60a5fa'));
+    makeChart('packagesChart', barCfg('Packages', getVals('packagesCreated'), '#a78bfa'));
+  } catch(e) { console.error(e); }
+}
+
+// ========== DELIVERIES ==========
+async function loadDeliveriesPage() {
+  if (_dash) {
+    const del = _dash.deliveryStats || {};
+    const cards = [
+      {label:'Total Requests', val:del.totalRequests, cls:'blue'},
+      {label:'Pending', val:del.pendingRequests, cls:'orange'},
+      {label:'Delivered', val:del.deliveredRequests, cls:'green'},
+      {label:'Success Rate', val:(del.deliverySuccessRate||0).toFixed(1)+'%', cls:'accent'},
+    ];
+    document.getElementById('deliveryStats').innerHTML = cards.map(c => `
+      <div class="stat-card ${c.cls}">
+        <div class="stat-label">${c.label}</div>
+        <div class="stat-value">${c.val||'—'}</div>
+      </div>`).join('');
+  }
+  loadDeliveries('pending');
+}
+
+async function loadDeliveries(type) {
+  document.getElementById('deliveryTableTitle').textContent =
+    type === 'pending' ? 'Pending deliveries' : 'Completed deliveries';
+  document.getElementById('deliveryTableBody').innerHTML =
+    `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Loading...</td></tr>`;
+  try {
+    const data = await api(`/delivery/${type}`);
+    const rows = data.deliveries || [];
+    if (!rows.length) {
+      document.getElementById('deliveryTableBody').innerHTML =
+        `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No ${type} deliveries</td></tr>`;
+      return;
+    }
+    document.getElementById('deliveryTableBody').innerHTML = rows.map(r => `
+      <tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">#${r.requestId}</td>
+        <td style="font-weight:500">${r.packageName||'—'}</td>
+        <td>${r.senderName||'—'}</td>
+        <td>${r.carrierName||'—'}</td>
+        <td style="font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          ${(r.fromAddress||'').split(',')[0]} → ${(r.toAddress||'').split(',')[0]}
+        </td>
+        <td style="font-family:var(--mono)">${fmtMoney(r.amount)}</td>
+        <td>${statusPill(r.status)}</td>
+        <td style="color:var(--muted);font-size:11px">${fmtDate(r.requestedAt)}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('deliveryTableBody').innerHTML =
+      `<tr><td colspan="8" style="text-align:center;color:var(--red);padding:32px">${e.message}</td></tr>`;
+  }
+}
+
+// ========== PACKAGES ==========
+async function loadPackagesPage() {
+  if (!_dash) return;
+  const pkg = _dash.packageStats || {};
+
+  document.getElementById('pkgStats').innerHTML = [
+    {label:'Total',val:pkg.totalPackages,cls:'blue'},
+    {label:'In Transit',val:pkg.inTransitPackages,cls:'orange'},
+    {label:'Delivered',val:pkg.deliveredPackages,cls:'green'},
+    {label:'Cancelled',val:pkg.cancelledPackages,cls:'red'},
+  ].map(c => `<div class="stat-card ${c.cls}"><div class="stat-label">${c.label}</div><div class="stat-value">${c.val||'—'}</div></div>`).join('');
+
+  const ptBreakdown = pkg.productTypeBreakdown || {};
+  const ttBreakdown = pkg.transportTypeBreakdown || {};
+
+  makeChart('productTypeChart', {
+    type: 'pie',
+    data: {
+      labels: Object.keys(ptBreakdown),
+      datasets: [{ data: Object.values(ptBreakdown), backgroundColor: ['#3ecf8e','#60a5fa','#a78bfa','#f6a623','#f56565','#e8ff57'], borderWidth: 0 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:'#888a93', font:{size:11}, padding:12 } } } }
+  });
+
+  makeChart('transportChart', {
+    type: 'pie',
+    data: {
+      labels: Object.keys(ttBreakdown),
+      datasets: [{ data: Object.values(ttBreakdown), backgroundColor: ['#60a5fa','#3ecf8e','#a78bfa','#f6a623'], borderWidth: 0 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:'#888a93', font:{size:11}, padding:12 } } } }
+  });
+
+  const insured = pkg.insuredPackages || 0;
+  const uninsured = pkg.uninsuredPackages || 0;
+  const total = insured + uninsured || 1;
+  document.getElementById('insuranceStats').innerHTML = `
+    <div class="prog-row">
+      <div class="prog-label"><span>Insured</span><span>${insured} (${Math.round(insured/total*100)}%)</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(insured/total*100)}%;background:var(--green)"></div></div>
+    </div>
+    <div class="prog-row">
+      <div class="prog-label"><span>Uninsured</span><span>${uninsured} (${Math.round(uninsured/total*100)}%)</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(uninsured/total*100)}%;background:var(--muted)"></div></div>
+    </div>
+    <div class="kv-row" style="margin-top:12px">
+      <span class="kv-k">Total package value</span>
+      <span class="kv-v" style="color:var(--accent)">${fmtMoney(pkg.totalPackageValue)}</span>
+    </div>`;
+}
+
+// ========== USERS ==========
+async function loadUsersPage() {
+  if (_dash) {
+    const u = _dash.userStats || {};
+    document.getElementById('userStatsCards').innerHTML = [
+      {label:'Total Users',val:u.totalUsers,cls:'blue'},
+      {label:'Verified',val:u.verifiedUsers,cls:'green'},
+      {label:'Active',val:u.activeUsers,cls:'accent'},
+      {label:'Unverified',val:u.unverifiedUsers,cls:'red'},
+    ].map(c=>`<div class="stat-card ${c.cls}"><div class="stat-label">${c.label}</div><div class="stat-value">${c.val||'—'}</div></div>`).join('');
+
+    const gb = u.genderBreakdown || {};
+    makeChart('genderChart', {
+      type: 'doughnut',
+      data: { labels: Object.keys(gb), datasets: [{ data: Object.values(gb), backgroundColor: ['#60a5fa','#f06292','#3ecf8e','#888a93'], borderWidth:0 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'right', labels:{ color:'#888a93', font:{size:11}, padding:10 } } } }
+    });
+
+    makeChart('userTypeChart', {
+      type: 'bar',
+      data: {
+        labels: ['Sender','Carrier','Both'],
+        datasets: [{ data: [u.senderUsers,u.carrierUsers,u.bothUsers], backgroundColor: ['#60a5fa99','#3ecf8e99','#a78bfa99'], borderColor: ['#60a5fa','#3ecf8e','#a78bfa'], borderWidth:1, borderRadius:4 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888a93'}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888a93'}} } }
+    });
+  }
+  loadUserList('verified');
+}
+
+async function loadUserList(type) {
+  document.getElementById('userTableTitle').textContent =
+    type === 'verified' ? 'Verified users' : 'Unverified users';
+  document.getElementById('userTableBody').innerHTML =
+    `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Loading...</td></tr>`;
+  try {
+    const data = await api(`/users/${type}`);
+    const rows = data.users || [];
+    if (!rows.length) {
+      document.getElementById('userTableBody').innerHTML =
+        `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No users found</td></tr>`;
+      return;
+    }
+    document.getElementById('userTableBody').innerHTML = rows.map(u => `
+      <tr>
+        <td style="font-weight:500">${u.fullName||'—'}</td>
+        <td style="font-family:var(--mono);font-size:11px">${u.mobile||'—'}</td>
+        <td style="color:var(--muted);font-size:11px">${u.email||'—'}</td>
+        <td><span class="badge badge-blue">${u.userType||'—'}</span></td>
+        <td>${statusPill(u.status)}</td>
+        <td><span class="status status-${u.verified?'verified':'unverified'}">${u.verified?'Verified':'Unverified'}</span></td>
+        <td style="color:var(--muted);font-size:11px">${fmtDate(u.createdAt)}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('userTableBody').innerHTML =
+      `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:32px">${e.message}</td></tr>`;
+  }
+}
+
+// ========== VERIFICATION ==========
+async function loadVerificationPage() {
+  if (!_dash) return;
+  const v = _dash.verificationStats || {};
+
+  document.getElementById('verifyCards').innerHTML = [
+    {label:'Total Verifications',val:v.totalVerifications,cls:'blue'},
+    {label:'Verified',val:v.verifiedDocuments,cls:'green'},
+    {label:'Pending',val:v.pendingVerifications,cls:'orange'},
+    {label:'Rejected',val:v.rejectedDocuments,cls:'red'},
+    {label:'Aadhaar',val:v.aadhaarVerifications,cls:'purple'},
+    {label:'PAN',val:v.panVerifications,cls:'accent'},
+  ].map(c=>`<div class="stat-card ${c.cls}"><div class="stat-label">${c.label}</div><div class="stat-value">${c.val||'—'}</div></div>`).join('');
+
+  makeChart('verifyTypeChart', {
+    type: 'bar',
+    data: {
+      labels: ['Aadhaar','PAN'],
+      datasets: [{
+        data: [v.aadhaarVerifications||0, v.panVerifications||0],
+        backgroundColor: ['#a78bfa99','#3ecf8e99'],
+        borderColor: ['#a78bfa','#3ecf8e'],
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888a93'}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888a93'}} } }
+  });
+
+  const stuck = v.usersStuckAtVerification || {};
+  document.getElementById('stuckUsers').innerHTML = Object.entries(stuck).map(([k,val]) => `
+    <div class="kv-row">
+      <span class="kv-k">${k.replace(/_/g,' ').toLowerCase()}</span>
+      <span class="kv-v">${val}</span>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:12px 0">No data</div>';
+}
+
+// ========== REVENUE ==========
+async function loadRevenuePage() {
+  try {
+    const data = await api('/revenue/stats');
+    document.getElementById('revenueCards').innerHTML = [
+      {label:'Total Revenue',val:fmtMoney(data.totalRevenue||0),cls:'accent'},
+      {label:'Total Commission',val:fmtMoney(data.totalCommission||0),cls:'green'},
+      {label:'Carrier Payouts',val:fmtMoney(data.totalCarrierPayouts||0),cls:'blue'},
+    ].map(c=>`<div class="stat-card ${c.cls}"><div class="stat-label">${c.label}</div><div class="stat-value" style="font-size:20px">${c.val}</div></div>`).join('');
+  } catch { }
+
+  try {
+    const analytics = await api('/analytics/daywise?days=30');
+    const rows = analytics.dayWiseData || [];
+    makeChart('revenueFullChart', {
+      type: 'line',
+      data: {
+        labels: rows.map(r => r.date),
+        datasets: [
+          { label: 'Revenue', data: rows.map(r => r.revenue||0), borderColor: '#e8ff57', backgroundColor: 'rgba(232,255,87,0.1)', tension: 0.4, borderWidth: 2, pointRadius: 0, fill: true },
+          { label: 'Commission', data: rows.map(r => r.commission||0), borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.08)', tension: 0.4, borderWidth: 2, pointRadius: 0, fill: true }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend: { position:'top', labels:{ color:'#888a93', font:{size:11}, padding:16 } } },
+        scales: {
+          x: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#888a93',font:{size:10},maxRotation:45} },
+          y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#888a93',font:{size:10}, callback: v => '₹'+v.toLocaleString('en-IN')} }
+        }
+      }
+    });
+  } catch { }
+}
+
+// ========== COMMISSION ==========
+async function loadCommissionPage() {
+  if (!_dash) return;
+  const com = _dash.commissionStats || {};
+
+  document.getElementById('commissionCards').innerHTML = [
+    {label:'Pending Commission',val:fmtMoney(com.totalPendingCommission),cls:'orange'},
+    {label:'Total Carrier Earnings',val:fmtMoney(com.totalCarrierEarnings),cls:'green'},
+    {label:'Daily Commission',val:fmtMoney(com.dailyCommission),cls:'accent'},
+  ].map(c=>`<div class="stat-card ${c.cls}"><div class="stat-label">${c.label}</div><div class="stat-value" style="font-size:20px">${c.val}</div></div>`).join('');
+
+  makeChart('carrierStatusChart', {
+    type: 'doughnut',
+    data: {
+      labels: ['Active','Inactive','Suspended'],
+      datasets: [{ data: [com.activeCarriers||0,com.inactiveCarriers||0,com.suspendedCarriers||0], backgroundColor: ['#3ecf8e','#888a93','#f56565'], borderWidth: 0 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{ legend:{ position:'right', labels:{ color:'#888a93', font:{size:11}, padding:10 } } } }
+  });
+
+  document.getElementById('commSummary').innerHTML = [
+    ['Active carriers', com.activeCarriers, 'var(--green)'],
+    ['Inactive carriers', com.inactiveCarriers, 'var(--muted)'],
+    ['Suspended', com.suspendedCarriers, 'var(--red)'],
+    ['Carriers with pending', com.carriersWithPendingCommission, 'var(--orange)'],
+    ['Total carrier earnings', fmtMoney(com.totalCarrierEarnings), 'var(--accent)'],
+  ].map(([k,v,c]) => `
+    <div class="kv-row">
+      <span class="kv-k">${k}</span>
+      <span class="kv-v" style="color:${c}">${v!==undefined?v:'—'}</span>
+    </div>`).join('');
+}
+
+
+// ========== NOTIFICATIONS ==========
+const _notifHistory = [];
+const _previewCache = {};
+
+async function loadNotificationsPage() {
+  // Load all 4 counts in parallel
+  ['ALL','SENDER','CARRIER','BOTH'].forEach(t => previewCount(t));
+}
+
+async function previewCount(type) {
+  if (_previewCache[type] !== undefined) {
+    document.getElementById('count-' + type).textContent = _previewCache[type] + ' users';
+    updateTargetPreview();
+    return;
+  }
+  try {
+    const data = await api(`/notification/preview?userType=${type}`);
+    const count = data.targetCount || 0;
+    _previewCache[type] = count;
+    document.getElementById('count-' + type).textContent = count + ' users';
+    updateTargetPreview();
+  } catch { }
+}
+
+function updateTargetPreview() {
+  const selected = document.querySelector('input[name=userType]:checked');
+  if (!selected) return;
+  const count = _previewCache[selected.value];
+  document.getElementById('targetPreview').textContent =
+    count !== undefined ? count + ' users' : '— users';
+}
+
+// Live preview
+document.addEventListener('DOMContentLoaded', () => {
+  const titleEl = document.getElementById('notifTitle');
+  const bodyEl  = document.getElementById('notifBody');
+
+  if (titleEl) {
+    titleEl.addEventListener('input', () => {
+      const v = titleEl.value;
+      document.getElementById('titleCount').textContent = v.length;
+      document.getElementById('prevTitle').textContent = v || 'Notification title';
+    });
+  }
+  if (bodyEl) {
+    bodyEl.addEventListener('input', () => {
+      const v = bodyEl.value;
+      document.getElementById('bodyCount').textContent = v.length;
+      document.getElementById('prevBody').textContent = v || 'Your message will appear here…';
+    });
+  }
+});
+
+async function sendNotification() {
+  const title    = document.getElementById('notifTitle').value.trim();
+  const body     = document.getElementById('notifBody').value.trim();
+  const userType = document.querySelector('input[name=userType]:checked')?.value || 'ALL';
+
+  if (!title) { alert('Title is required'); return; }
+  if (!body)  { alert('Message body is required'); return; }
+
+  const btn = document.getElementById('sendBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  hideResult();
+
+  try {
+    const res = await fetch(BASE + '/notification/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, userType })
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      showResult(true, json.data);
+      addToHistory(json.data);
+      // clear form
+      document.getElementById('notifTitle').value = '';
+      document.getElementById('notifBody').value = '';
+      document.getElementById('titleCount').textContent = '0';
+      document.getElementById('bodyCount').textContent = '0';
+      document.getElementById('prevTitle').textContent = 'Notification title';
+      document.getElementById('prevBody').textContent = 'Your message will appear here…';
+    } else {
+      showResult(false, null, json.error || 'Send failed');
+    }
+  } catch(e) {
+    showResult(false, null, e.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showResult(success, data, errMsg) {
+  const card = document.getElementById('notifResult');
+  card.className = 'result-card ' + (success ? 'success' : 'error');
+  card.style.display = 'block';
+
+  if (success && data) {
+    document.getElementById('notifResultTitle').textContent =
+      `Notification sent to ${data.userType} users`;
+    document.getElementById('notifResultStats').innerHTML = `
+      <div class="result-stat">
+        <div class="result-stat-val" style="color:var(--text)">${data.totalTargeted}</div>
+        <div class="result-stat-lbl">Targeted</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-val" style="color:var(--green)">${data.sent}</div>
+        <div class="result-stat-lbl">Sent</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-val" style="color:var(--red)">${data.failed}</div>
+        <div class="result-stat-lbl">Failed</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-val" style="color:var(--muted)">${data.skipped}</div>
+        <div class="result-stat-lbl">Skipped</div>
+      </div>`;
+  } else {
+    document.getElementById('notifResultTitle').textContent = 'Error: ' + errMsg;
+    document.getElementById('notifResultStats').innerHTML = '';
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideResult() {
+  document.getElementById('notifResult').style.display = 'none';
+}
+
+function addToHistory(data) {
+  _notifHistory.unshift(data);
+  document.getElementById('historyCount').textContent = _notifHistory.length;
+  document.getElementById('notifHistory').innerHTML = _notifHistory.map(h => `
+    <div class="history-item">
+      <div class="history-dot" style="background:var(--green)"></div>
+      <div style="flex:1; min-width:0">
+        <div class="history-title">${h.title}</div>
+        <div class="history-meta">${h.body}</div>
+        <div class="history-badges">
+          <span class="badge badge-accent">${h.userType}</span>
+          <span class="badge badge-green">${h.sent} sent</span>
+          ${h.failed > 0 ? `<span class="badge badge-red">${h.failed} failed</span>` : ''}
+          ${h.skipped > 0 ? `<span class="badge" style="background:var(--surface3);color:var(--muted)">${h.skipped} skipped</span>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ========== CSV EXPORT ==========
+function exportCSV() {
+  const activePage = document.querySelector('.content.active')?.id?.replace('page-', '') || 'dashboard';
+
+  switch(activePage) {
+    case 'dashboard':   exportDashboardCSV(); break;
+    case 'analytics':   exportAnalyticsCSV(); break;
+    case 'deliveries':  exportDeliveriesCSV(); break;
+    case 'packages':    exportPackagesCSV(); break;
+    case 'users':       exportUsersCSV(); break;
+    case 'verification':exportVerificationCSV(); break;
+    case 'revenue':     exportRevenueCSV(); break;
+    case 'commission':  exportCommissionCSV(); break;
+    case 'notifications': alert('No data to export from Notifications page.'); break;
+    default: alert('Nothing to export on this page.');
+  }
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r =>
+    r.map(cell => {
+      const s = String(cell ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(',')
+  ).join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportDashboardCSV() {
+  if (!_dash) { alert('Dashboard not loaded yet.'); return; }
+  const u = _dash.userStats || {};
+  const p = _dash.packageStats || {};
+  const d = _dash.deliveryStats || {};
+  const c = _dash.commissionStats || {};
+  const t = _dash.todayOverview || {};
+
+  const rows = [
+    ['Metric', 'Value'],
+    ['--- USER STATS ---', ''],
+    ['Total Users', u.totalUsers],
+    ['Verified Users', u.verifiedUsers],
+    ['Unverified Users', u.unverifiedUsers],
+    ['Active Users', u.activeUsers],
+    ['Inactive Users', u.inactiveUsers],
+    ['Sender Users', u.senderUsers],
+    ['Carrier Users', u.carrierUsers],
+    ['Both Users', u.bothUsers],
+    ['--- PACKAGE STATS ---', ''],
+    ['Total Packages', p.totalPackages],
+    ['Created', p.createdPackages],
+    ['In Transit', p.inTransitPackages],
+    ['Delivered', p.deliveredPackages],
+    ['Cancelled', p.cancelledPackages],
+    ['Insured', p.insuredPackages],
+    ['Total Package Value (Rs)', p.totalPackageValue],
+    ['--- DELIVERY STATS ---', ''],
+    ['Total Requests', d.totalRequests],
+    ['Pending', d.pendingRequests],
+    ['Accepted', d.acceptedRequests],
+    ['Picked Up', d.pickedUpRequests],
+    ['In Transit', d.inTransitRequests],
+    ['Delivered', d.deliveredRequests],
+    ['Rejected', d.rejectedRequests],
+    ['Cancelled', d.cancelledRequests],
+    ['Success Rate (%)', d.deliverySuccessRate],
+    ['--- COMMISSION ---', ''],
+    ['Pending Commission (Rs)', c.totalPendingCommission],
+    ['Total Carrier Earnings (Rs)', c.totalCarrierEarnings],
+    ['Daily Commission (Rs)', c.dailyCommission],
+    ['Active Carriers', c.activeCarriers],
+    ['--- TODAY ---', ''],
+    ['Packages Created Today', t.packagesCreatedToday],
+    ['Requests Today', t.requestsCreatedToday],
+    ['Deliveries Completed Today', t.deliveriesCompletedToday],
+    ['Revenue Today (Rs)', t.revenueToday],
+    ['New Users Today', t.newUsersToday],
+    ['Active Trips Today', t.activeTripsToday],
+  ];
+  downloadCSV(`saffari-dashboard-${today()}.csv`, rows);
+}
+
+async function exportAnalyticsCSV() {
+  try {
+    const data = await api('/analytics/daywise?days=30');
+    const rows = [['Date','Packages Created','Deliveries Completed','Revenue (Rs)','Commission (Rs)','New Users','Requests Created']];
+    (data.dayWiseData || []).forEach(r => {
+      rows.push([r.date, r.packagesCreated, r.deliveriesCompleted,
+        Math.round(r.revenue), Math.round(r.commission), r.newUsers, r.requestsCreated]);
+    });
+    downloadCSV(`saffari-analytics-30d-${today()}.csv`, rows);
+  } catch(e) { alert('Failed to fetch analytics: ' + e.message); }
+}
+
+async function exportDeliveriesCSV() {
+  const type = document.getElementById('deliveryTableTitle').textContent.includes('Pending') ? 'pending' : 'completed';
+  try {
+    const data = await api(`/delivery/${type}`);
+    const rows = [['Request ID','Package','Sender','Carrier','From','To','Amount (Rs)','Status','Requested At','Delivered At']];
+    (data.deliveries || []).forEach(r => {
+      rows.push([r.requestId, r.packageName, r.senderName, r.carrierName,
+        r.fromAddress, r.toAddress, r.amount, r.status,
+        fmtDate(r.requestedAt), fmtDate(r.deliveredAt)]);
+    });
+    downloadCSV(`saffari-deliveries-${type}-${today()}.csv`, rows);
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
+function exportPackagesCSV() {
+  if (!_dash) { alert('Dashboard not loaded yet.'); return; }
+  const p = _dash.packageStats || {};
+  const rows = [
+    ['Status', 'Count'],
+    ['Total', p.totalPackages],
+    ['Created', p.createdPackages],
+    ['Request Sent', p.requestSentPackages],
+    ['Matched', p.matchedPackages],
+    ['Picked Up', p.pickedUpPackages],
+    ['In Transit', p.inTransitPackages],
+    ['Delivered', p.deliveredPackages],
+    ['Cancelled', p.cancelledPackages],
+    ['', ''],
+    ['Insured', p.insuredPackages],
+    ['Uninsured', p.uninsuredPackages],
+    ['Total Value (Rs)', p.totalPackageValue],
+    ['', ''],
+    ['Product Type', 'Count'],
+    ...Object.entries(p.productTypeBreakdown || {}).map(([k,v]) => [k, v]),
+    ['', ''],
+    ['Transport Type', 'Count'],
+    ...Object.entries(p.transportTypeBreakdown || {}).map(([k,v]) => [k, v]),
+  ];
+  downloadCSV(`saffari-packages-${today()}.csv`, rows);
+}
+
+async function exportUsersCSV() {
+  const type = document.getElementById('userTableTitle').textContent.includes('Verified') &&
+               !document.getElementById('userTableTitle').textContent.includes('Un') ? 'verified' : 'unverified';
+  try {
+    const data = await api(`/users/${type}`);
+    const rows = [['Full Name','Mobile','Email','User Type','Status','Verified','Verification Status','Joined']];
+    (data.users || []).forEach(u => {
+      rows.push([u.fullName, u.mobile, u.email, u.userType,
+        u.status, u.verified ? 'Yes' : 'No', u.verificationStatus, fmtDate(u.createdAt)]);
+    });
+    downloadCSV(`saffari-users-${type}-${today()}.csv`, rows);
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
+function exportVerificationCSV() {
+  if (!_dash) { alert('Dashboard not loaded yet.'); return; }
+  const v = _dash.verificationStats || {};
+  const stuck = v.usersStuckAtVerification || {};
+  const rows = [
+    ['Metric', 'Value'],
+    ['Total Verifications', v.totalVerifications],
+    ['Verified Documents', v.verifiedDocuments],
+    ['Pending Verifications', v.pendingVerifications],
+    ['Rejected Documents', v.rejectedDocuments],
+    ['Aadhaar Verifications', v.aadhaarVerifications],
+    ['PAN Verifications', v.panVerifications],
+    ['', ''],
+    ['Stuck Stage', 'Count'],
+    ...Object.entries(stuck).map(([k,v]) => [k.replace(/_/g,' '), v]),
+  ];
+  downloadCSV(`saffari-verification-${today()}.csv`, rows);
+}
+
+async function exportRevenueCSV() {
+  try {
+    const data = await api('/analytics/daywise?days=30');
+    const rows = [['Date', 'Revenue (Rs)', 'Commission (Rs)']];
+    (data.dayWiseData || []).forEach(r => {
+      rows.push([r.date, Math.round(r.revenue), Math.round(r.commission)]);
+    });
+    downloadCSV(`saffari-revenue-30d-${today()}.csv`, rows);
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+function exportCommissionCSV() {
+  if (!_dash) { alert('Dashboard not loaded yet.'); return; }
+  const c = _dash.commissionStats || {};
+  const rows = [
+    ['Metric', 'Value'],
+    ['Total Pending Commission (Rs)', c.totalPendingCommission],
+    ['Total Carrier Earnings (Rs)', c.totalCarrierEarnings],
+    ['Daily Commission (Rs)', c.dailyCommission],
+    ['Carriers With Pending', c.carriersWithPendingCommission],
+    ['Active Carriers', c.activeCarriers],
+    ['Inactive Carriers', c.inactiveCarriers],
+    ['Suspended Carriers', c.suspendedCarriers],
+  ];
+  downloadCSV(`saffari-commission-${today()}.csv`, rows);
+}
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+// ========== INIT ==========
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+loadDashboard();
+</script>
+</body>
+</html>

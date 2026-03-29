@@ -1,0 +1,10 @@
+spring:
+  cache:
+    type: caffeine
+    cache-names: users, profiles, verification, userPages, userPagesWithProfile
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=600s,recordStats
+logging:
+  level:
+    org.springframework.cache: DEBUG
+    com.saffaricarrers.saffaricarrers: DEBUG
