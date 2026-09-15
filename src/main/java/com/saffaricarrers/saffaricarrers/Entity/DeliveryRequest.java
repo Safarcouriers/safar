@@ -106,23 +106,29 @@ public class DeliveryRequest {
     private LocalDateTime updatedAt;
     private String pickupPhoto;  // Photo taken at pickup
     private String deliveryPhoto; // Photo taken at delivery @Column(name = "request_type", length = 50)
-    private String requestType;
-
+//    private String requestType;
+//    @Column(name = "is_rider_delivery", nullable = false, columnDefinition = "boolean default false")
+    private Boolean isRiderDelivery = false;
     // ... rest of the entity ...
-
+    @Column(name = "in_transit_at")
+    private LocalDateTime inTransitAt;
     // ✅ Add getter and setter
-    public String getRequestType() {
-        return requestType;
-    }
-
-    public void setRequestType(String requestType) {
-        this.requestType = requestType;
-    }
+//    public String getRequestType() {
+//        return requestType;
+//    }
+//
+//    public void setRequestType(String requestType) {
+//        this.requestType = requestType;
+//    }
 
     public enum RequestStatus {
         PENDING, ACCEPTED, REJECTED, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED
     }
+    public enum RequestType { SENDER_TO_CARRIER, CARRIER_TO_SENDER }
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "request_type", nullable = false)
+    private RequestType requestType;
     // Helper method to access package payment
     public Payment getPackagePayment() {
         return packageEntity != null ? packageEntity.getPayment() : null;

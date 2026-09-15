@@ -1,8 +1,10 @@
 package com.saffaricarrers.saffaricarrers.Controller;
+
 import com.saffaricarrers.saffaricarrers.Dtos.*;
 import com.saffaricarrers.saffaricarrers.Responses.*;
 import com.saffaricarrers.saffaricarrers.Services.AdminDashboardService;
 import com.saffaricarrers.saffaricarrers.Services.FirebaseNotificationService;
+import com.saffaricarrers.saffaricarrers.Exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,45 +28,30 @@ public class AdminDashboardController {
 
     // ==================== MAIN DASHBOARD ====================
 
-    /**
-     * Get complete dashboard statistics
-     * GET /api/v1/admin/dashboard
-     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getDashboard() {
         try {
             AdminDashboardResponse dashboardData = adminDashboardService.getDashboardStats();
-
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", dashboardData);
             response.put("message", "Dashboard data retrieved successfully");
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching dashboard: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "success", false,
-                            "error", "Failed to fetch dashboard data",
-                            "message", e.getMessage()
-                    ));
+                    .body(Map.of("success", false, "error", "Failed to fetch dashboard data", "message", e.getMessage()));
         }
     }
 
     // ==================== USER ANALYTICS ====================
 
-    /**
-     * Get user statistics breakdown
-     * GET /api/v1/admin/dashboard/users/stats
-     */
     @GetMapping("/users/stats")
     public ResponseEntity<Map<String, Object>> getUserStats() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getUserStats());
+            response.put("data", adminDashboardService.getUserStats());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching user stats: {}", e.getMessage());
@@ -72,17 +60,12 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * Get verified users list
-     * GET /api/v1/admin/dashboard/users/verified
-     */
     @GetMapping("/users/verified")
     public ResponseEntity<Map<String, Object>> getVerifiedUsers() {
         try {
-            UserListResponse verifiedUsers = adminDashboardService.getVerifiedUsers();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", verifiedUsers);
+            response.put("data", adminDashboardService.getVerifiedUsers());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching verified users: {}", e.getMessage());
@@ -91,17 +74,12 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * Get unverified users list
-     * GET /api/v1/admin/dashboard/users/unverified
-     */
     @GetMapping("/users/unverified")
     public ResponseEntity<Map<String, Object>> getUnverifiedUsers() {
         try {
-            UserListResponse unverifiedUsers = adminDashboardService.getUnverifiedUsers();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", unverifiedUsers);
+            response.put("data", adminDashboardService.getUnverifiedUsers());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching unverified users: {}", e.getMessage());
@@ -112,17 +90,12 @@ public class AdminDashboardController {
 
     // ==================== VERIFICATION ANALYTICS ====================
 
-    /**
-     * Get document verification statistics
-     * GET /api/v1/admin/dashboard/verification/stats
-     */
     @GetMapping("/verification/stats")
     public ResponseEntity<Map<String, Object>> getVerificationStats() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getVerificationStats());
+            response.put("data", adminDashboardService.getVerificationStats());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching verification stats: {}", e.getMessage());
@@ -133,17 +106,12 @@ public class AdminDashboardController {
 
     // ==================== PACKAGE ANALYTICS ====================
 
-    /**
-     * Get package statistics
-     * GET /api/v1/admin/dashboard/packages/stats
-     */
     @GetMapping("/packages/stats")
     public ResponseEntity<Map<String, Object>> getPackageStats() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getPackageStats());
+            response.put("data", adminDashboardService.getPackageStats());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching package stats: {}", e.getMessage());
@@ -154,17 +122,12 @@ public class AdminDashboardController {
 
     // ==================== DELIVERY REQUEST ANALYTICS ====================
 
-    /**
-     * Get delivery request statistics
-     * GET /api/v1/admin/dashboard/delivery/stats
-     */
     @GetMapping("/delivery/stats")
     public ResponseEntity<Map<String, Object>> getDeliveryStats() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getDeliveryStats());
+            response.put("data", adminDashboardService.getDeliveryStats());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching delivery stats: {}", e.getMessage());
@@ -173,17 +136,12 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * Get pending delivery requests
-     * GET /api/v1/admin/dashboard/delivery/pending
-     */
     @GetMapping("/delivery/pending")
     public ResponseEntity<Map<String, Object>> getPendingDeliveries() {
         try {
-            PendingDeliveriesResponse pending = adminDashboardService.getPendingDeliveries();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", pending);
+            response.put("data", adminDashboardService.getPendingDeliveries());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching pending deliveries: {}", e.getMessage());
@@ -192,17 +150,12 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * Get completed delivery requests
-     * GET /api/v1/admin/dashboard/delivery/completed
-     */
     @GetMapping("/delivery/completed")
     public ResponseEntity<Map<String, Object>> getCompletedDeliveries() {
         try {
-            CompletedDeliveriesResponse completed = adminDashboardService.getCompletedDeliveries();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", completed);
+            response.put("data", adminDashboardService.getCompletedDeliveries());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching completed deliveries: {}", e.getMessage());
@@ -213,10 +166,6 @@ public class AdminDashboardController {
 
     // ==================== REVENUE ANALYTICS ====================
 
-    /**
-     * Get revenue statistics
-     * GET /api/v1/admin/dashboard/revenue/stats
-     */
     @GetMapping("/revenue/stats")
     public ResponseEntity<Map<String, Object>> getRevenueStats() {
         try {
@@ -234,17 +183,12 @@ public class AdminDashboardController {
 
     // ==================== COMMISSION ANALYTICS ====================
 
-    /**
-     * Get commission statistics
-     * GET /api/v1/admin/dashboard/commission/stats
-     */
     @GetMapping("/commission/stats")
     public ResponseEntity<Map<String, Object>> getCommissionStats() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getCommissionStats());
+            response.put("data", adminDashboardService.getCommissionStats());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching commission stats: {}", e.getMessage());
@@ -255,17 +199,12 @@ public class AdminDashboardController {
 
     // ==================== TODAY'S OVERVIEW ====================
 
-    /**
-     * Get today's overview
-     * GET /api/v1/admin/dashboard/today
-     */
     @GetMapping("/today")
     public ResponseEntity<Map<String, Object>> getTodayOverview() {
         try {
-            AdminDashboardResponse dashboard = adminDashboardService.getDashboardStats();
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", dashboard.getTodayOverview());
+            response.put("data", adminDashboardService.getTodayOverview());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching today's overview: {}", e.getMessage());
@@ -276,18 +215,13 @@ public class AdminDashboardController {
 
     // ==================== DAY-WISE ANALYTICS ====================
 
-    /**
-     * Get day-wise analytics for last N days
-     * GET /api/v1/admin/dashboard/analytics/daywise?days=30
-     */
     @GetMapping("/analytics/daywise")
     public ResponseEntity<Map<String, Object>> getDayWiseAnalytics(
             @RequestParam(value = "days", defaultValue = "30") int days) {
         try {
-            DayWiseAnalyticsResponse analytics = adminDashboardService.getDayWiseAnalytics(days);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", analytics);
+            response.put("data", adminDashboardService.getDayWiseAnalytics(days));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching day-wise analytics: {}", e.getMessage());
@@ -296,12 +230,8 @@ public class AdminDashboardController {
         }
     }
 
-    // ==================== SUMMARY ENDPOINTS ====================
+    // ==================== SUMMARY ====================
 
-    /**
-     * Get quick summary of all key metrics
-     * GET /api/v1/admin/dashboard/summary
-     */
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary() {
         try {
@@ -328,7 +258,6 @@ public class AdminDashboardController {
             response.put("success", true);
             response.put("data", summary);
             response.put("generatedAt", dashboard.getGeneratedAt());
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error fetching summary: {}", e.getMessage());
@@ -336,9 +265,109 @@ public class AdminDashboardController {
                     .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
+
+    // ==================== ORDERS (with payment info) ====================
+
+    /**
+     * GET /api/v1/admin/dashboard/orders
+     *
+     * Query params:
+     *   status  – "all" | delivery status (PENDING, ACCEPTED, PICKED_UP, IN_TRANSIT, DELIVERED,
+     *              REJECTED, CANCELLED) | "COMMISSION_PENDING" | "TRANSFER_PENDING"
+     *   size    – max records to return (default 500)
+     *
+     * Each order row includes:
+     *   requestId, packageName, senderName/Phone, carrierName/Phone,
+     *   fromAddress, toAddress, status, requestedAt, deliveredAt,
+     *   totalAmount, platformCommission, carrierAmount,
+     *   paymentMethod, paymentStatus, carrierTransferStatus,
+     *   razorpayPaymentId, razorpayOrderId, razorpayPayoutId,
+     *   paymentCompletedAt, carrierTransferInitiatedAt, carrierTransferCompletedAt,
+     *   transferFailureReason, commissionPaid, paymentId
+     */
+    @GetMapping("/orders")
+    public ResponseEntity<Map<String, Object>> getAllOrders(
+            @RequestParam(value = "status", defaultValue = "all") String status,
+            @RequestParam(value = "size", defaultValue = "500") int size) {
+        try {
+            List<OrderSummaryDto> orders = adminDashboardService.getAllOrdersWithPayments(status, size);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", Map.of(
+                            "orders", orders,
+                            "total", orders.size()
+                    )
+            ));
+        } catch (Exception e) {
+            log.error("Error fetching orders: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/v1/admin/dashboard/orders/commission/mark-paid/{paymentId}
+     *
+     * Admin manually marks the platform commission as collected for a COD order.
+     * Body (optional JSON): { "note": "Collected via UPI on 12-Apr-2026" }
+     *
+     * Response: { success: true, message: "Commission marked as paid", paymentId: 42 }
+     */
+    @PostMapping("/orders/commission/mark-paid/{paymentId}")
+    public ResponseEntity<Map<String, Object>> markCommissionPaid(
+            @PathVariable Long paymentId,
+            @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String note = (body != null) ? body.getOrDefault("note", "") : "";
+            adminDashboardService.markCommissionPaid(paymentId, note);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Commission marked as paid successfully",
+                    "paymentId", paymentId
+            ));
+        } catch (IllegalStateException e) {
+            // Business-rule violation (already paid, wrong type, etc.)
+            log.warn("Mark commission paid rejected | paymentId={} | reason={}", paymentId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (RuntimeException e) {
+            // Payment not found
+            log.error("Mark commission paid error | paymentId={} | {}", paymentId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Unexpected error in markCommissionPaid: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    // ==================== COMPLETE RIDE HISTORY ====================
+
+    /**
+     * Full read-only ride history for the admin panel.
+     * Includes parties, addresses, package/proof images, OTPs, payment/settlement
+     * data, carrier verification and the complete GPS breadcrumb history.
+     */
+    @GetMapping("/ride-history/{requestId}")
+    public ResponseEntity<Map<String, Object>> getRideHistoryDetail(@PathVariable Long requestId) {
+        try {
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "data", adminDashboardService.getRideHistoryDetail(requestId)
+            ));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error fetching ride history {}: {}", requestId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    // ==================== MISC ====================
+
     @PostMapping("/notification")
-    public void testNotification()
-    {
-        firebaseNotificationService.sendNotification("f","FG","FG");
+    public void testNotification() {
+        firebaseNotificationService.sendNotification("f", "FG", "FG");
     }
 }

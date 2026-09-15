@@ -991,4 +991,11 @@ public class CarrierRouteService {
         allResults.put("summary", summary);
         return allResults;
     }
+    public List<CarrierRouteResponse> getAllRoutesForAdmin() {
+        log.info("Admin fetching ALL routes (no date filter)");
+        List<CarrierRoute> routes = routeRepository.findAllRoutesForAdmin();
+        return routes.stream()
+                .map(this::mapToCarrierRouteResponse)
+                .collect(Collectors.toList());
+    }
 }

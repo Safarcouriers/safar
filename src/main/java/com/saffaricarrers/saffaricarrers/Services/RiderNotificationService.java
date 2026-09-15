@@ -18,100 +18,384 @@ public class RiderNotificationService {
 
     private final CarrierProfileRepository carrierProfileRepository;
     private final FirebaseNotificationService firebaseNotificationService;
+    private final PaymentService paymentService;
 
-    // Max radius any carrier could ever set (matches our UI cap of 30km)
-    private static final double MAX_POSSIBLE_RADIUS_KM = 30.0;
+    // Must match the maximum rider search radius allowed in RiderService.
+    private static final double MAX_POSSIBLE_RADIUS_KM = 50.0;
 
     /**
      * Called immediately after a package is created.
      *
-     * SCALING FIX: Instead of loading ALL online carriers into memory,
-     * we first do a bounding-box query in the DB to get only carriers
-     * within MAX_POSSIBLE_RADIUS_KM of the package. This means at scale
-     * with 10,000 online carriers spread across India, only the ~50
-     * carriers near Chennai get loaded — not all 10,000.
+     * A carrier will receive a notification ONLY when:
      *
-     * Then we do exact Haversine per carrier to respect their personal radius.
+     * 1. Carrier is online
+     * 2. Carrier has a valid location
+     * 3. Carrier has an FCM token
+     * 4. Carrier has NO pending commission
+     * 5. Package is inside the carrier's configured search radius
      *
-     * Runs @Async so it never delays the sender's createPackage response.
+     * Runs @Async so package creation is not delayed by FCM notifications.
      */
     @Async
     public void notifyNearbyOnlineCarriers(Package pkg) {
-        // ✅ FIX: Package lat/lng are primitive double — check for 0.0 not null
-        if (pkg.getLatitude() == 0.0 && pkg.getLongitude() == 0.0) {
-            log.warn("Package {} has no coordinates — skipping rider notifications", pkg.getPackageId());
+
+        if (pkg == null) {
+            log.warn("Cannot notify carriers — package is null");
             return;
         }
 
         double pkgLat = pkg.getLatitude();
         double pkgLng = pkg.getLongitude();
 
-        // ✅ SCALING FIX: bounding box in DB, not full table scan
-        // Degrees per km: lat ~111.32km, lng varies by latitude
-        double latDelta = MAX_POSSIBLE_RADIUS_KM / 111.32;
-        double lngDelta = MAX_POSSIBLE_RADIUS_KM / (111.32 * Math.cos(Math.toRadians(pkgLat)));
-
-        double minLat = pkgLat - latDelta;
-        double maxLat = pkgLat + latDelta;
-        double minLng = pkgLng - lngDelta;
-        double maxLng = pkgLng + lngDelta;
-
-        // Only fetches carriers whose last_lat/last_lng fall inside the bounding box
-        List<CarrierProfile> nearbyOnlineCarriers =
-                carrierProfileRepository.findOnlineCarriersInBoundingBox(minLat, maxLat, minLng, maxLng);
-
-        if (nearbyOnlineCarriers.isEmpty()) {
-            log.info("No online carriers near package {} — skipping", pkg.getPackageId());
+        if (pkgLat == 0.0 && pkgLng == 0.0) {
+            log.warn(
+                    "Package {} has invalid coordinates (0,0) — skipping rider notifications",
+                    pkg.getPackageId()
+            );
             return;
         }
 
-        log.info("Package {} — checking {} nearby online carrier(s)", pkg.getPackageId(), nearbyOnlineCarriers.size());
+        // Sender's userId — used to prevent self-notification.
+        String senderUserId =
+                pkg.getSender() != null
+                        ? pkg.getSender().getUserId()
+                        : null;
+
+        /*
+         * Bounding box.
+         *
+         * This prevents loading every online carrier in the database.
+         * Only carriers roughly within MAX_POSSIBLE_RADIUS_KM are loaded.
+         */
+        double latDelta =
+                MAX_POSSIBLE_RADIUS_KM / 111.32;
+
+        double cosLat =
+                Math.cos(Math.toRadians(pkgLat));
+
+        // Avoid division by zero at extreme latitudes.
+        double lngDelta;
+
+        if (Math.abs(cosLat) < 0.000001) {
+            lngDelta = 180.0;
+        } else {
+            lngDelta =
+                    MAX_POSSIBLE_RADIUS_KM / (111.32 * cosLat);
+        }
+
+        /*
+         * Only carriers with a known location are considered.
+         *
+         * We intentionally DO NOT notify carriers with no location
+         * because their distance from the package cannot be verified.
+         */
+        List<CarrierProfile> locatedCarriers =
+                carrierProfileRepository.findOnlineCarriersInBoundingBox(
+                        pkgLat - latDelta,
+                        pkgLat + latDelta,
+                        pkgLng - lngDelta,
+                        pkgLng + lngDelta
+                );
+
+        log.info(
+                "Package {} — {} online carrier(s) with location found",
+                pkg.getPackageId(),
+                locatedCarriers.size()
+        );
 
         int notified = 0;
+        int commissionBlocked = 0;
+        int outsideRadius = 0;
 
-        for (CarrierProfile carrier : nearbyOnlineCarriers) {
-            // Carrier location already validated by the DB query (non-null, in bounding box)
-            double radius = carrier.getSearchRadiusKm() != null ? carrier.getSearchRadiusKm() : 10.0;
-            double dist   = haversineKm(carrier.getLastLat(), carrier.getLastLng(), pkgLat, pkgLng);
+        for (CarrierProfile carrier : locatedCarriers) {
 
-            // Exact Haversine check — bounding box is a square, we want a circle
-            if (dist > radius) continue;
+            if (carrier == null || carrier.getUser() == null) {
+                continue;
+            }
 
-            String fcmToken = carrier.getUser().getFcmToken();
-            if (fcmToken == null || fcmToken.isBlank()) continue;
+            String carrierId =
+                    carrier.getUser().getUserId();
 
-            Map<String, String> data = Map.of(
-                    "type",        "RIDER_REQUEST",
-                    "packageId",   String.valueOf(pkg.getPackageId()),
-                    "productName", pkg.getProductName()  != null ? pkg.getProductName()  : "",
-                    "fromAddress", pkg.getFromAddress()  != null ? pkg.getFromAddress()  : "",
-                    "toAddress",   pkg.getToAddress()    != null ? pkg.getToAddress()    : "",
-                    "distanceKm",  String.format("%.1f", dist),
-                    "tripCharge",  pkg.getTripCharge()   != null ? String.valueOf(pkg.getTripCharge()) : "0"
+            /*
+             * Safety check — carrier should already be online
+             * because the repository query filters online carriers.
+             */
+            if (!Boolean.TRUE.equals(carrier.getIsOnline())) {
+                log.debug(
+                        "Skipping carrier {} — currently offline",
+                        carrierId
+                );
+                continue;
+            }
+
+            /*
+             * Prevent a carrier from receiving their own package.
+             */
+            if (senderUserId != null
+                    && senderUserId.equals(carrierId)) {
+
+                log.info(
+                        "Skipping notification — carrier {} created this package",
+                        carrierId
+                );
+
+                continue;
+            }
+
+            /*
+             * FCM token required.
+             */
+            String fcmToken =
+                    carrier.getUser().getFcmToken();
+
+            if (fcmToken == null || fcmToken.isBlank()) {
+                log.debug(
+                        "Skipping carrier {} — no FCM token",
+                        carrierId
+                );
+                continue;
+            }
+
+            /*
+             * IMPORTANT:
+             *
+             * Existing PaymentService logic already determines
+             * whether this carrier has pending COD commission.
+             *
+             * If commission is pending:
+             *
+             *     ❌ No new ride
+             *     ❌ No FCM notification
+             */
+            boolean canStartTrip;
+
+            try {
+                canStartTrip =
+                        paymentService.canCarrierStartTrip(carrierId);
+            } catch (Exception e) {
+                /*
+                 * Fail closed.
+                 *
+                 * If we cannot verify commission eligibility,
+                 * do NOT send a new ride notification.
+                 */
+                log.error(
+                        "Unable to verify commission eligibility for carrier {}. " +
+                                "Skipping notification.",
+                        carrierId,
+                        e
+                );
+
+                continue;
+            }
+
+            if (!canStartTrip) {
+
+                commissionBlocked++;
+
+                log.info(
+                        "Skipping notification — carrier {} has pending commission",
+                        carrierId
+                );
+
+                continue;
+            }
+
+            /*
+             * Carrier's personal search radius.
+             *
+             * Default = 10 km.
+             */
+            double radius =
+                    carrier.getSearchRadiusKm() != null
+                            ? carrier.getSearchRadiusKm()
+                            : 10.0;
+
+            /*
+             * Exact distance calculation.
+             */
+            Double carrierLat =
+                    carrier.getLastLat();
+
+            Double carrierLng =
+                    carrier.getLastLng();
+
+            if (carrierLat == null || carrierLng == null) {
+                log.debug(
+                        "Skipping carrier {} — location missing",
+                        carrierId
+                );
+                continue;
+            }
+
+            if (carrierLat == 0.0 && carrierLng == 0.0) {
+                log.debug(
+                        "Skipping carrier {} — invalid location (0,0)",
+                        carrierId
+                );
+                continue;
+            }
+
+            double distance =
+                    haversineKm(
+                            carrierLat,
+                            carrierLng,
+                            pkgLat,
+                            pkgLng
+                    );
+
+            /*
+             * IMPORTANT:
+             *
+             * Exact radius check.
+             *
+             * Example:
+             *
+             * Rider radius = 10 km
+             * Package distance = 7.5 km
+             * => notification
+             *
+             * Rider radius = 10 km
+             * Package distance = 14 km
+             * => no notification
+             */
+            if (distance > radius) {
+
+                outsideRadius++;
+
+                log.info(
+                        "Carrier {} is {} km away — outside {} km radius, skipping",
+                        carrierId,
+                        String.format("%.1f", distance),
+                        String.format("%.1f", radius)
+                );
+
+                continue;
+            }
+
+            /*
+             * Everything passed.
+             */
+            sendNotification(
+                    carrier,
+                    pkg,
+                    String.format("%.1f", distance)
             );
 
-            firebaseNotificationService.sendNotificationWithData(
-                    fcmToken,
-                    "📦 New Package Nearby",
-                    pkg.getProductName() + " · " + String.format("%.1f", dist) + " km · ₹" + pkg.getTripCharge(),
-                    data
-            );
-
-            log.info("Notified carrier {} ({} km away) for package {}",
-                    carrier.getUser().getUserId(), String.format("%.1f", dist), pkg.getPackageId());
             notified++;
         }
 
-        log.info("Package {} — notified {} carrier(s)", pkg.getPackageId(), notified);
+        log.info(
+                "Package {} — notified {} carrier(s), " +
+                        "{} commission-blocked, {} outside radius",
+                pkg.getPackageId(),
+                notified,
+                commissionBlocked,
+                outsideRadius
+        );
     }
 
-    private double haversineKm(double lat1, double lng1, double lat2, double lng2) {
+    /**
+     * Build and send rider FCM notification.
+     */
+    private void sendNotification(
+            CarrierProfile carrier,
+            Package pkg,
+            String distanceLabel
+    ) {
+
+        String fcmToken =
+                carrier.getUser().getFcmToken();
+
+        Map<String, String> data = Map.of(
+                "type",
+                "RIDER_REQUEST",
+
+                "packageId",
+                String.valueOf(pkg.getPackageId()),
+
+                "productName",
+                pkg.getProductName() != null
+                        ? pkg.getProductName()
+                        : "",
+
+                "fromAddress",
+                pkg.getFromAddress() != null
+                        ? pkg.getFromAddress()
+                        : "",
+
+                "toAddress",
+                pkg.getToAddress() != null
+                        ? pkg.getToAddress()
+                        : "",
+
+                "distanceKm",
+                distanceLabel,
+
+                "tripCharge",
+                pkg.getTripCharge() != null
+                        ? String.valueOf(pkg.getTripCharge())
+                        : "0"
+        );
+
+        String body =
+                (pkg.getProductName() != null
+                        ? pkg.getProductName()
+                        : "New package")
+                        + " · "
+                        + distanceLabel
+                        + " km · ₹"
+                        + (pkg.getTripCharge() != null
+                        ? pkg.getTripCharge()
+                        : "0");
+
+        firebaseNotificationService.sendNotificationWithData(
+                fcmToken,
+                "📦 New Package Nearby",
+                body,
+                data
+        );
+
+        log.info(
+                "Notified carrier {} ({} km) for package {}",
+                carrier.getUser().getUserId(),
+                distanceLabel,
+                pkg.getPackageId()
+        );
+    }
+
+    /**
+     * Exact Haversine distance in kilometers.
+     */
+    private double haversineKm(
+            double lat1,
+            double lng1,
+            double lat2,
+            double lng2
+    ) {
+
         final int R = 6371;
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLng = Math.toRadians(lng2 - lng1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        double dLat =
+                Math.toRadians(lat2 - lat1);
+
+        double dLng =
+                Math.toRadians(lng2 - lng1);
+
+        double a =
+                Math.sin(dLat / 2)
+                        * Math.sin(dLat / 2)
+                        +
+                        Math.cos(Math.toRadians(lat1))
+                                * Math.cos(Math.toRadians(lat2))
+                                * Math.sin(dLng / 2)
+                                * Math.sin(dLng / 2);
+
+        return R
+                * 2
+                * Math.atan2(
+                Math.sqrt(a),
+                Math.sqrt(1 - a)
+        );
     }
 }

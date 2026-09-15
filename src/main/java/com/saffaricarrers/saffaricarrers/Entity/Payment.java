@@ -118,7 +118,8 @@ public class Payment {
 
     @Column
     private String completedBy;
-
+    @Column(name = "platform_fee")
+    private Double platformFee;
     // ─── Audit ────────────────────────────────────────────────────────────
 
     @Column(nullable = false, updatable = false)
@@ -127,6 +128,25 @@ public class Payment {
     @Column
     private LocalDateTime updatedAt;
 
+    @Column(name = "qr_id")
+    private String qrId;            // Razorpay QR Code ID (e.g. "qr_OBa...")
+
+    @Column(name = "qr_image_url", length = 1024)
+    private String qrImageUrl;      // PNG URL from Razorpay to show on rider's phone
+
+    @Column(name = "qr_short_url", length = 512)
+    private String qrShortUrl;      // Short URL for deep linking into UPI app
+
+// ─── Getters & Setters ────────────────────────────────────────────────────────
+
+    public String getQrId() { return qrId; }
+    public void setQrId(String qrId) { this.qrId = qrId; }
+
+    public String getQrImageUrl() { return qrImageUrl; }
+    public void setQrImageUrl(String qrImageUrl) { this.qrImageUrl = qrImageUrl; }
+
+    public String getQrShortUrl() { return qrShortUrl; }
+    public void setQrShortUrl(String qrShortUrl) { this.qrShortUrl = qrShortUrl; }
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

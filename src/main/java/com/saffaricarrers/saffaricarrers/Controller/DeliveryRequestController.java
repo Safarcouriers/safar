@@ -1,6 +1,8 @@
 package com.saffaricarrers.saffaricarrers.Controller;
 import com.saffaricarrers.saffaricarrers.Dtos.DeliveryRequestDto;
+import com.saffaricarrers.saffaricarrers.Entity.DeliveryRequest;
 import com.saffaricarrers.saffaricarrers.Exception.ResourceNotFoundException;
+import com.saffaricarrers.saffaricarrers.Repository.DeliveryRequestRepository;
 import com.saffaricarrers.saffaricarrers.Responses.RouteAvailabilityResponse;
 import com.saffaricarrers.saffaricarrers.Services.DeliveryRequestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
+import java.util.LinkedHashMap;
 import java.util.List;
 
 
@@ -23,11 +27,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/delivery")
 @RequiredArgsConstructor
 public class DeliveryRequestController {
+    private final DeliveryRequestRepository deliveryRequestRepository;
 
     private final DeliveryRequestService deliveryRequestService;
 
@@ -122,15 +128,30 @@ public class DeliveryRequestController {
      * Carrier sends request to sender
      */
     @PostMapping("/requests/carrier")
-    public ResponseEntity<DeliveryRequestResponse> carrierSendRequest(
+    public ResponseEntity<?> carrierSendRequest(
             @RequestHeader("userId") String userId,
             @RequestBody CarrierRequestDto requestDto) {
-        return ResponseEntity.ok(deliveryRequestService.carrierSendRequestToSender(
-                userId,
-                requestDto.getPackageId(),
-                requestDto.getRouteId(),
-                requestDto.getCarrierNote()
-        ));
+        try {
+            return ResponseEntity.ok(deliveryRequestService.carrierSendRequestToSender(
+                    userId,
+                    requestDto.getPackageId(),
+                    requestDto.getRouteId(),
+                    requestDto.getCarrierNote()
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+        }
     }
 
     // ==================== ACCEPT REQUESTS ====================
@@ -146,9 +167,8 @@ public class DeliveryRequestController {
             @RequestBody(required = false) AcceptRequestDto dto) {
 
         try {
-            System.out.println("uiserid"+userId);
             String note = dto != null ? dto.getNote() : null;
-            return ResponseEntity.ok(deliveryRequestService.carrierAcceptRequest(userId, requestId, note));
+            return ResponseEntity.ok(deliveryRequestService.senderAcceptRequest(userId, requestId, note)); // ✅ fixed
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
@@ -159,7 +179,7 @@ public class DeliveryRequestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace(); // Log this properly
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
         }
@@ -174,7 +194,7 @@ public class DeliveryRequestController {
             @RequestHeader("userId") String userId,
             @RequestBody(required = false) AcceptRequestDto dto) {
         String note = dto != null ? dto.getNote() : null;
-        return ResponseEntity.ok(deliveryRequestService.senderAcceptRequest(userId, requestId, note));
+        return ResponseEntity.ok(deliveryRequestService.carrierAcceptRequest(userId, requestId, note));
     }
 
     // ==================== REJECT REQUESTS ====================
@@ -304,5 +324,81 @@ public class DeliveryRequestController {
             @RequestHeader("userId") String userId) {
         return ResponseEntity.ok(deliveryRequestService.getDeliveryProgressStatus(userId, requestId));
     }
+    @GetMapping("/audit")
+    public ResponseEntity<List<Map<String, Object>>> auditAll() {
+        List<DeliveryRequest> all = deliveryRequestRepository.findAll();
+        List<Map<String, Object>> result = all.stream().map(r -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("requestId", r.getRequestId());
+            row.put("status", r.getStatus());
+            row.put("requestType", r.getRequestType());
+            row.put("senderId", r.getSender() != null ? r.getSender().getUserId() : null);
+            row.put("senderName", r.getSender() != null ? r.getSender().getFullName() : null);
+            row.put("carrierId", r.getCarrier() != null ? r.getCarrier().getUserId() : null);
+            row.put("carrierName", r.getCarrier() != null ? r.getCarrier().getFullName() : null);
+            row.put("requestedAt", r.getRequestedAt());
+            return row;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // PUT /api/admin/delivery-requests/55/request-type?value=CARRIER_TO_SENDER
+    // Manually corrects one row's request_type
+    @PutMapping("/{requestId}/request-type")
+    public ResponseEntity<?> fixRequestType(
+            @PathVariable Long requestId,
+            @RequestParam DeliveryRequest.RequestType value) {
+
+        DeliveryRequest req = deliveryRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found: " + requestId));
+
+        DeliveryRequest.RequestType old = req.getRequestType();
+        req.setRequestType(value);
+        deliveryRequestRepository.save(req);
+
+        return ResponseEntity.ok(Map.of(
+                "requestId", requestId,
+                "oldRequestType", old,
+                "newRequestType", value
+        ));
+    }
+
+    // POST /api/admin/delivery-requests/backfill-null-request-types
+    // One-time cleanup for any row still missing a request_type
+    @PostMapping("/backfill-null-request-types")
+    public ResponseEntity<?> backfillNulls() {
+        List<DeliveryRequest> nullOnes = deliveryRequestRepository.findAll().stream()
+                .filter(r -> r.getRequestType() == null)
+                .collect(Collectors.toList());
+
+        nullOnes.forEach(r -> r.setRequestType(DeliveryRequest.RequestType.SENDER_TO_CARRIER));
+        deliveryRequestRepository.saveAll(nullOnes);
+
+        return ResponseEntity.ok(Map.of("updatedCount", nullOnes.size()));
+    }/**
+     * Rider payment flow ONLY.
+     *
+     * POST /api/delivery/requests/{requestId}/verify-delivery-payment
+     *
+     * This endpoint verifies the delivery OTP and marks the delivery as
+     * DELIVERED WITHOUT automatically recording COD or triggering payout.
+     *
+     * Payment is handled separately after this endpoint succeeds.
+     */
+    @PostMapping("/requests/{requestId}/verify-delivery-payment")
+    public ResponseEntity<DeliveryRequestResponse> verifyDeliveryOtpForPayment(
+            @PathVariable Long requestId,
+            @RequestHeader("userId") String userId,
+            @RequestBody OtpVerificationDto dto) {
+
+        return ResponseEntity.ok(
+                deliveryRequestService.verifyDeliveryOtpForPayment(
+                        userId,
+                        requestId,
+                        dto.getOtp()
+                )
+        );
+    }
 
 }
+

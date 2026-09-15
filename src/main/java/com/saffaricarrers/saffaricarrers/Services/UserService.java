@@ -17,6 +17,7 @@ import com.saffaricarrers.saffaricarrers.Responses.PageResponse;
 import com.saffaricarrers.saffaricarrers.Responses.UserProfileResponse;
 import com.saffaricarrers.saffaricarrers.Responses.VerificationStatusResponse;
 import com.saffaricarrers.saffaricarrers.Responses.ProfileCompletionResponse;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -45,6 +46,7 @@ public class UserService {
     private final CarrierProfileRepository carrierProfileRepository;
     private final CallBackService callBackService;
     private final CarrierService carrierService;
+    private final EntityManager entityManager;
 
     // ✅ Sentinel value — marks "collected via OCR, no physical image needed"
     private static final String OCR_COLLECTED = "OCR_VERIFIED";
@@ -444,6 +446,147 @@ public class UserService {
         log.info("FCM token updated successfully for user: {}", userId);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ACCOUNT DELETION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────────────────
+// ACCOUNT DELETION
+// ─────────────────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────────────────
+// ACCOUNT DELETION
+// ─────────────────────────────────────────────────────────────────────────
+
+    @CacheEvict(value = {"users", "profiles", "verification", "userPages", "userPagesWithProfile"}, allEntries = true)
+    @Transactional
+    public void deleteUser(String userId) {
+        log.info("Starting account deletion for user: {}", userId);
+
+        User user = userRepository.findByUserIdWithProfile(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // 0. Clear location_tracking rows referencing ANY delivery_requests tied
+        // to this user (as sender OR carrier-via-routes) before any cascade or
+        // native delete touches delivery_requests. Must run first.
+        int clearedTracking = entityManager.createNativeQuery(
+                "DELETE lt FROM location_tracking1 lt " +
+                        "INNER JOIN delivery_requests dr ON lt.request_id = dr.request_id " +
+                        "LEFT JOIN carrier_routes cr ON dr.route_id = cr.route_id " +
+                        "LEFT JOIN carrier_profiles cp ON cr.carrier_id = cp.carrier_id " +
+                        "INNER JOIN users u ON dr.sender_id = u.id OR cp.user_id = u.id " +
+                        "WHERE u.user_id = :userId"
+        ).setParameter("userId", userId).executeUpdate();
+        log.info("Cleared {} location_tracking rows for user: {}", clearedTracking, userId);
+
+        // 1. Delete document verification status records
+        List<DocumentVerificationStatus> docStatuses = documentStatusRepository.findByUserId(userId);
+        if (!docStatuses.isEmpty()) {
+            documentStatusRepository.deleteAll(docStatuses);
+            log.info("Deleted {} document verification records for: {}", docStatuses.size(), userId);
+        }
+
+        // 2. Delete addresses
+        addressRepository.deleteByUser(user);
+        log.info("Deleted addresses for: {}", userId);
+
+        // 3. Delete carrier profile and everything that depends on it.
+        CarrierProfile carrierProfile = user.getCarrierProfile();
+        if (carrierProfile != null) {
+            Long carrierProfileId = carrierProfile.getCarrierId();
+
+            // 3a. payments tied to delivery_requests on this carrier's routes
+            entityManager.createNativeQuery(
+                    "DELETE p FROM payments p " +
+                            "INNER JOIN delivery_requests dr ON p.delivery_request_id = dr.request_id " +
+                            "INNER JOIN carrier_routes cr ON dr.route_id = cr.route_id " +
+                            "WHERE cr.carrier_id = :carrierProfileId"
+            ).setParameter("carrierProfileId", carrierProfileId).executeUpdate();
+
+            // 3b. payments tied directly to packages on this carrier's routes
+            entityManager.createNativeQuery(
+                    "DELETE p FROM payments p " +
+                            "INNER JOIN delivery_requests dr ON p.package_id = dr.package_id " +
+                            "INNER JOIN carrier_routes cr ON dr.route_id = cr.route_id " +
+                            "WHERE cr.carrier_id = :carrierProfileId"
+            ).setParameter("carrierProfileId", carrierProfileId).executeUpdate();
+
+            // 3c. delivery_requests tied to this carrier's routes
+            int deletedRequests = entityManager.createNativeQuery(
+                    "DELETE dr FROM delivery_requests dr " +
+                            "INNER JOIN carrier_routes cr ON dr.route_id = cr.route_id " +
+                            "WHERE cr.carrier_id = :carrierProfileId"
+            ).setParameter("carrierProfileId", carrierProfileId).executeUpdate();
+            log.info("Deleted {} delivery_requests for carrier: {}", deletedRequests, carrierProfileId);
+
+            // 3d. route_pricing tied to this carrier's routes
+            entityManager.createNativeQuery(
+                    "DELETE rp FROM route_pricing rp " +
+                            "INNER JOIN carrier_routes cr ON rp.route_id = cr.route_id " +
+                            "WHERE cr.carrier_id = :carrierProfileId"
+            ).setParameter("carrierProfileId", carrierProfileId).executeUpdate();
+
+            // 3e. carrier_routes themselves
+            int deletedRoutes = entityManager.createNativeQuery(
+                    "DELETE FROM carrier_routes WHERE carrier_id = :carrierProfileId"
+            ).setParameter("carrierProfileId", carrierProfileId).executeUpdate();
+            log.info("Deleted {} carrier_routes for carrier: {}", deletedRoutes, carrierProfileId);
+
+            // 3f. bank_details — use entityManager.remove on the managed entity
+            if (carrierProfile.getBankDetails() != null) {
+                entityManager.remove(carrierProfile.getBankDetails());
+                carrierProfile.setBankDetails(null);
+                log.info("Deleted bank details for carrier profile: {}", carrierProfileId);
+            }
+
+            // 3g. flush + clear, then delete the carrier profile itself
+            entityManager.flush();
+            entityManager.clear();
+            carrierProfileRepository.delete(
+                    carrierProfileRepository.findById(carrierProfileId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Carrier profile not found: " + carrierProfileId))
+            );
+            log.info("Deleted carrier profile for: {}", userId);
+
+            // entityManager.clear() detached `user` above — re-fetch it
+            user = userRepository.findByUserIdWithProfile(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+        }
+
+        // 4. Delete S3-stored files (profile image, documents)
+        try {
+            if (user.getProfileUrl() != null && !user.getProfileUrl().equals(OCR_COLLECTED)) {
+                callBackService.deleteFromS3(user.getProfileUrl());
+            }
+            if (user.getAadharFrontUrl() != null && !user.getAadharFrontUrl().equals(OCR_COLLECTED)) {
+                callBackService.deleteFromS3(user.getAadharFrontUrl());
+            }
+            if (user.getAadharBackUrl() != null && !user.getAadharBackUrl().equals(OCR_COLLECTED)) {
+                callBackService.deleteFromS3(user.getAadharBackUrl());
+            }
+            if (user.getPanCardUrl() != null && !user.getPanCardUrl().equals(OCR_COLLECTED)) {
+                callBackService.deleteFromS3(user.getPanCardUrl());
+            }
+        } catch (Exception e) {
+            log.warn("S3 cleanup failed for user {} — continuing with DB deletion", userId, e);
+        }
+
+        // 5. TODO: handle packages/payments tied to this user as a SENDER
+        // (not carrier). Not covered above — out of scope per client agreement
+        // for now, flagged separately.
+
+        // 6. Clear notifications referencing this user directly. Simple
+        // direct FK (notifications.user_id -> users.id), no chain — but
+        // must run before the user row itself is deleted.
+        int deletedNotifications = entityManager.createNativeQuery(
+                "DELETE FROM notifications WHERE user_id = :userId"
+        ).setParameter("userId", user.getId()).executeUpdate();
+        log.info("Deleted {} notifications for: {}", deletedNotifications, userId);
+
+        // 7. Finally, delete the user record itself.
+        userRepository.delete(user);
+        log.info("User record deleted for: {}", userId);
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // ADMIN — PAGED USERS
     // ─────────────────────────────────────────────────────────────────────────

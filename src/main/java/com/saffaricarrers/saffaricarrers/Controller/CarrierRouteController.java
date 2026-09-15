@@ -292,6 +292,16 @@ public ResponseEntity<Map<String, Object>> findCarriersAlongRoute(
     /**
      * ✅ OPTION 1: Simple optimized search with LIMIT (RECOMMENDED for your case)
      */
-
+    /**
+     * ADMIN ONLY: Get ALL routes without any date/capacity filter
+     * Used by admin dashboard to see all historical and future routes
+     */
+    @GetMapping("/admin/all")
+    @Operation(summary = "Admin - Get all routes", description = "Returns ALL routes for admin panel, no date or capacity filters")
+    public ResponseEntity<List<CarrierRouteResponse>> getAllRoutesForAdmin() {
+      //  log.info("Admin requesting all routes");
+        List<CarrierRouteResponse> routes = carrierRouteService.getAllRoutesForAdmin();
+        return ResponseEntity.ok(routes);
+    }
 
 }

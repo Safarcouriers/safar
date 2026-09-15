@@ -533,4 +533,200 @@ public class PaymentController {
             ));
         }
     }
+    // ============================================================
+// ADD THESE ENDPOINTS TO PaymentController.java
+// ============================================================
+
+    /**
+     * Create a Razorpay UPI QR code for the sender to scan & pay at delivery.
+     * Called by rider-delivery.tsx AFTER delivery OTP is verified.
+     *
+     * POST /api/payments/create-qr?deliveryRequestId=123
+     *
+     * Response:
+     * {
+     *   "qrId":        "qr_...",
+     *   "imageUrl":    "https://...png",   ← display this as <Image> in RN
+     *   "shortUrl":    "https://rzp.io/...",
+     *   "amount":      204.0,
+     *   "amountInPaise": 20400,
+     *   "description": "Delivery payment for Laptop Bag",
+     *   "carrierAmount": 170.0,
+     *   "platformFee":  4.0,
+     *   "platformCommission": 30.0,
+     *   "expiresInSeconds": 1800
+     * }
+     */
+    @PostMapping("/create-qr")
+    public ResponseEntity<?> createQrPayment(@RequestParam Long deliveryRequestId) {
+        try {
+            log.info("🔳 QR payment requested for deliveryRequestId: {}", deliveryRequestId);
+            Map<String, Object> result = paymentService.createQrPayment(deliveryRequestId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalStateException e) {
+            log.error("❌ Invalid state for QR payment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "INVALID_STATE", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ QR creation failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "QR_CREATION_FAILED", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Poll QR payment status — called every 5s by rider's app after QR is shown.
+     *
+     * GET /api/payments/qr-status?qrId=qr_xxx&deliveryRequestId=123
+     *
+     * Response:
+     * { "paid": true, "paymentId": "pay_..." }
+     * { "paid": false }
+     */
+    @GetMapping("/qr-status")
+    public ResponseEntity<?> checkQrStatus(
+            @RequestParam String qrId,
+            @RequestParam Long deliveryRequestId) {
+        try {
+            Map<String, Object> result = paymentService.checkQrPaymentStatus(qrId, deliveryRequestId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("❌ QR status check failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "STATUS_CHECK_FAILED", "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * NEW isolated post-delivery QR endpoint.
+     * This does not touch the existing /create-qr flow.
+     */
+    @PostMapping("/create-qr-after-delivery-otp")
+    public ResponseEntity<?> createQrAfterDeliveryOtp(
+            @RequestParam Long deliveryRequestId) {
+        try {
+            Map<String, Object> result =
+                    paymentService.createQrPaymentAfterDeliveryOtp(
+                            deliveryRequestId
+                    );
+
+            return ResponseEntity.ok(result);
+
+        } catch (IllegalStateException e) {
+            log.error(
+                    "❌ Post-delivery QR invalid state: {}",
+                    e.getMessage()
+            );
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "error", "INVALID_STATE",
+                            "message", e.getMessage()
+                    ));
+
+        } catch (Exception e) {
+            log.error(
+                    "❌ Post-delivery QR creation failed: {}",
+                    e.getMessage(),
+                    e
+            );
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "QR_CREATION_FAILED",
+                            "message", e.getMessage()
+                    ));
+        }
+    }
+
+    /**
+     * NEW isolated post-delivery QR status endpoint.
+     */
+    @GetMapping("/qr-status-after-delivery")
+    public ResponseEntity<?> checkQrStatusAfterDelivery(
+            @RequestParam String qrId,
+            @RequestParam Long deliveryRequestId) {
+        try {
+            Map<String, Object> result =
+                    paymentService.checkQrPaymentStatusAfterDelivery(
+                            qrId,
+                            deliveryRequestId
+                    );
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error(
+                    "❌ Post-delivery QR status check failed",
+                    e
+            );
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "STATUS_CHECK_FAILED",
+                            "message", e.getMessage()
+                    ));
+        }
+    }
+
+    /**
+     * Razorpay QR payment webhook.
+     *
+     * IMPORTANT: @RequestBody String must stay raw because Razorpay's
+     * webhook signature is calculated from the exact raw request body.
+     */
+    @PostMapping(
+            value = "/webhook/razorpay",
+            consumes = "application/json"
+    )
+    public ResponseEntity<?> razorpayWebhook(
+            @RequestHeader(
+                    value = "X-Razorpay-Signature",
+                    required = false
+            ) String signature,
+            @RequestHeader(
+                    value = "x-razorpay-event-id",
+                    required = false
+            ) String eventId,
+            @RequestBody String rawBody) {
+
+        try {
+            paymentService.handleRazorpayQrWebhook(
+                    rawBody,
+                    signature,
+                    eventId
+            );
+
+            // Razorpay expects a 2xx response.
+            return ResponseEntity.ok(
+                    Map.of("success", true)
+            );
+
+        } catch (SecurityException e) {
+            log.error(
+                    "❌ Invalid Razorpay webhook signature: {}",
+                    e.getMessage()
+            );
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Invalid webhook signature"
+                    ));
+
+        } catch (Exception e) {
+            log.error(
+                    "❌ Razorpay webhook processing failed",
+                    e
+            );
+
+            // 500 allows Razorpay to retry a failed webhook delivery.
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Webhook processing failed"
+                    ));
+        }
+    }
+
 }

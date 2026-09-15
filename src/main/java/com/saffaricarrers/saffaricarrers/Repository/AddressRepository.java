@@ -21,6 +21,6 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     @Query("UPDATE Address a SET a.isDefault = false WHERE a.user = :user")
     void unsetDefaultAddress(User user);
     boolean existsByUser(User user);
-
+    void deleteByUser(User user);
     boolean existsByUserAndIsDefaultTrue(User user);
 }

@@ -32,4 +32,6 @@ public class RequestsTabResponse {
     private int totalActiveCount;
     private int totalCompletedCount;
     private int totalCancelledCount;
+    private List<RequestSummary> requestsSentByMeAsCarrier;
+    private List<RequestSummary> requestsSentByMeAsSender;
 }

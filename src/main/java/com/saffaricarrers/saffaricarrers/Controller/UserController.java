@@ -340,5 +340,33 @@ public ResponseEntity<PageResponse<UserProfileResponse>> getAllUsers(
                     ));
         }
     }
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable String userId) {
+        try {
+            userService.deleteUser(userId);
+            log.info("Account deleted successfully for user: {}", userId);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Account and all associated data deleted successfully",
+                    "userId", userId
+            ));
+        } catch (ResourceNotFoundException e) {
+            log.error("User not found for deletion: {}", userId, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "User not found",
+                            "error", e.getMessage()
+                    ));
+        } catch (Exception e) {
+            log.error("Error deleting user account: {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Failed to delete account",
+                            "error", e.getMessage()
+                    ));
+        }
+    }
 
 }

@@ -1,34 +1,35 @@
 package com.saffaricarrers.saffaricarrers.Controller;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.saffaricarrers.saffaricarrers.Dtos.AddressRequest;
 import com.saffaricarrers.saffaricarrers.Responses.AddressResponse;
 import com.saffaricarrers.saffaricarrers.Responses.ApiResponse;
 import com.saffaricarrers.saffaricarrers.Services.AddressService;
+import com.saffaricarrers.saffaricarrers.Services.CallBackService1;
 import com.saffaricarrers.saffaricarrers.Services.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
 @RestController
 @RequestMapping("/api/user/{userId}/address")
 @RequiredArgsConstructor
 @Slf4j
 public class AddressController {
-
     private final AddressService addressService;
     private final UserService userService;
-
+    private final CallBackService1 callBackService;
     @PostMapping()
     public ResponseEntity<?> createAddress(
             @PathVariable String userId,
@@ -189,6 +190,19 @@ public class AddressController {
     public String testing()
     {
         return "TEsting on";
+    }
+    @PostMapping("/upload-video")
+    public ResponseEntity<String> uploadVideo(@RequestParam("file") MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            String videoUrl = callBackService.uploadVideoToS3(
+                    inputStream,
+                    file.getContentType(),
+                    file.getSize()
+            );
+            return ResponseEntity.ok(videoUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Upload failed: " + e.getMessage());
+        }
     }
 }
 

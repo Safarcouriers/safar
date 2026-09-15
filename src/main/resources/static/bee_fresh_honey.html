@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title>Bee Fresh Honey — Pure Honey. Straight From Nature.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+:root{
+  --gold:#C8860A;--gold-light:#E8A820;--gold-pale:#F5D98A;
+  --amber:#A0520A;--amber-deep:#7A3B08;
+  --cream:#FAF4E8;--cream-dark:#F0E6CC;
+  --brown:#2A1200;--brown-mid:#5A2E10;
+  --warm-white:#FEFBF4;--text-dark:#1C0D00;
+  --text-mid:#5A3A1A;--text-light:#9A7050;
+  --border:rgba(200,134,10,0.18);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--warm-white);color:var(--text-dark);overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:1rem 5%;background:rgba(254,251,244,0.95);backdrop-filter:blur(14px);border-bottom:0.5px solid var(--border);transition:box-shadow 0.3s;}
+nav.scrolled{box-shadow:0 2px 28px rgba(122,59,8,0.1);}
+.nav-logo{font-family:var(--serif);font-size:1.5rem;font-weight:600;color:var(--amber-deep);text-decoration:none;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.01em;}
+.nav-logo img{height:44px;width:auto;object-fit:contain;}
+.nav-links{display:flex;gap:2rem;list-style:none;}
+.nav-links a{font-size:0.78rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-mid);text-decoration:none;transition:color 0.2s;}
+.nav-links a:hover{color:var(--gold);}
+.nav-cta{background:var(--amber-deep);color:#fff;border:none;padding:0.6rem 1.5rem;font-family:var(--sans);font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;text-decoration:none;transition:background 0.2s;white-space:nowrap;}
+.nav-cta:hover{background:var(--amber);}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.hamburger span{width:22px;height:1.5px;background:var(--amber-deep);display:block;}
+.mob-nav{position:fixed;inset:0;z-index:300;background:var(--warm-white);padding:5rem 2rem 2rem;transform:translateX(100%);transition:transform 0.3s ease;display:flex;flex-direction:column;gap:1.5rem;}
+.mob-nav.open{transform:translateX(0);}
+.mob-nav a{font-family:var(--serif);font-size:2rem;font-weight:300;color:var(--brown);text-decoration:none;border-bottom:0.5px solid var(--border);padding-bottom:1rem;}
+.mob-close{position:absolute;top:1.2rem;right:1.5rem;font-size:1.4rem;cursor:pointer;color:var(--amber-deep);background:none;border:none;}
+
+/* HERO */
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:7rem 5% 4rem;gap:3rem;background:linear-gradient(150deg,#FDF6E3 0%,#F7E6B8 50%,#EDD080 100%);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23C8860A' fill-opacity='0.035'%3E%3Cpath d='M50 50a9 9 0 1 1 0-18 9 9 0 0 1 0 18zm0 0'/%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
+.hero-eyebrow{font-size:0.72rem;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--amber-deep);margin-bottom:1rem;display:flex;align-items:center;gap:0.7rem;}
+.hero-eyebrow::before{content:'';width:28px;height:1px;background:var(--amber-deep);flex-shrink:0;}
+.hero h1{font-family:var(--serif);font-size:clamp(3.2rem,5.5vw,6rem);font-weight:300;line-height:1.04;color:var(--brown);margin-bottom:1.3rem;}
+.hero h1 em{font-style:italic;color:var(--amber);}
+.hero-sub{font-size:1rem;font-weight:300;color:var(--text-mid);line-height:1.8;max-width:430px;margin-bottom:2.2rem;}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2.5rem;}
+.btn-primary{background:var(--amber-deep);color:#fff;padding:0.85rem 2rem;border:none;border-radius:2px;font-family:var(--sans);font-size:0.8rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:background 0.2s;display:inline-block;}
+.btn-primary:hover{background:var(--amber);}
+.btn-outline{background:transparent;color:var(--amber-deep);padding:0.85rem 2rem;border:1px solid var(--amber-deep);border-radius:2px;font-family:var(--sans);font-size:0.8rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
+.btn-outline:hover{background:var(--amber-deep);color:#fff;}
+.hero-badges{display:flex;flex-wrap:wrap;gap:0.6rem;}
+.badge{display:flex;align-items:center;gap:0.4rem;padding:0.35rem 0.85rem;background:rgba(255,255,255,0.7);border:0.5px solid rgba(200,134,10,0.25);border-radius:20px;font-size:0.7rem;font-weight:500;letter-spacing:0.08em;color:var(--amber-deep);}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.hero-visual{display:flex;justify-content:center;align-items:center;position:relative;z-index:2;}
+.hero-img-wrap{position:relative;width:420px;max-width:100%;}
+.hero-img-wrap img{width:100%;height:480px;object-fit:contain;filter:drop-shadow(0 24px 60px rgba(122,59,8,0.25));animation:float 4.5s ease-in-out infinite;}
+.hero-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(232,168,32,0.18),transparent 70%);pointer-events:none;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* MARQUEE */
+.marquee-bar{background:var(--amber-deep);padding:0.8rem 0;overflow:hidden;white-space:nowrap;}
+.marquee-track{display:inline-flex;gap:2.5rem;animation:marquee 28s linear infinite;}
+.marquee-track span{font-size:0.72rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.88);}
+.marquee-track .sep{color:var(--gold-pale);}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* SHARED */
+section{padding:6rem 5%;}
+.section-label{font-size:0.7rem;font-weight:500;letter-spacing:0.24em;text-transform:uppercase;color:var(--gold);margin-bottom:0.7rem;display:flex;align-items:center;gap:0.7rem;}
+.section-label::before{content:'';width:26px;height:1px;background:var(--gold);flex-shrink:0;}
+.section-title{font-family:var(--serif);font-size:clamp(2rem,3.5vw,3.5rem);font-weight:300;color:var(--brown);line-height:1.12;margin-bottom:1rem;}
+.section-title em{font-style:italic;color:var(--amber);}
+.section-sub{font-size:0.95rem;font-weight:300;color:var(--text-mid);line-height:1.85;max-width:520px;}
+.centered .section-label{justify-content:center;}
+.centered .section-label::before{display:none;}
+.centered .section-sub{margin:0 auto;text-align:center;}
+
+/* STORY */
+.story{background:var(--cream);}
+.story-grid{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;max-width:1200px;margin:0 auto;}
+.story-collage{position:relative;height:520px;}
+.story-img-a{position:absolute;top:0;left:0;width:62%;height:72%;border-radius:3px;overflow:hidden;box-shadow:0 10px 40px rgba(122,59,8,0.16);}
+.story-img-b{position:absolute;bottom:0;right:0;width:50%;height:58%;border-radius:3px;overflow:hidden;box-shadow:0 10px 40px rgba(122,59,8,0.16);}
+.story-img-a img,.story-img-b img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
+.story-img-a:hover img,.story-img-b:hover img{transform:scale(1.04);}
+.story-tag{position:absolute;bottom:-14px;right:-14px;background:var(--amber-deep);color:#fff;padding:0.7rem 1.1rem;border-radius:2px;font-size:0.7rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;z-index:2;}
+.story-stats{display:flex;gap:2rem;margin-top:2rem;}
+.stat-item{border-left:2px solid var(--gold-pale);padding-left:1rem;}
+.stat-num{font-family:var(--serif);font-size:2.2rem;font-weight:300;color:var(--amber);line-height:1;}
+.stat-label{font-size:0.75rem;color:var(--text-light);margin-top:0.2rem;}
+
+/* WHY */
+.why{background:var(--warm-white);}
+.why-inner{max-width:1200px;margin:0 auto;}
+.why-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:3.5rem;}
+.why-card{background:var(--cream);border:0.5px solid var(--border);border-radius:3px;padding:2.2rem 1.8rem;transition:transform 0.25s,box-shadow 0.25s;}
+.why-card:hover{transform:translateY(-5px);box-shadow:0 14px 44px rgba(122,59,8,0.1);}
+.why-icon{font-size:1.8rem;margin-bottom:1.1rem;}
+.why-card h3{font-family:var(--serif);font-size:1.3rem;font-weight:400;color:var(--brown);margin-bottom:0.6rem;}
+.why-card p{font-size:0.88rem;color:var(--text-mid);line-height:1.78;}
+.compare-wrap{margin-top:3.5rem;border:0.5px solid var(--border);border-radius:3px;overflow:hidden;}
+.ctable{width:100%;border-collapse:collapse;}
+.ctable th{padding:0.9rem 1.4rem;font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;background:var(--amber-deep);color:#fff;text-align:left;}
+.ctable th:first-child{width:38%;}
+.ctable td{padding:0.85rem 1.4rem;font-size:0.86rem;color:var(--text-mid);border-bottom:0.5px solid var(--border);}
+.ctable tr:last-child td{border-bottom:none;}
+.ctable td:not(:first-child){text-align:center;font-weight:500;}
+.ctable td.good{color:#2D7A2D;}
+.ctable td.bad{color:#A33;}
+.ctable tr:nth-child(even){background:rgba(250,244,232,0.5);}
+
+/* PRODUCTS */
+.products{background:#1A0C00;}
+.products-inner{max-width:1200px;margin:0 auto;}
+.products .section-label{color:var(--gold-pale);}
+.products .section-label::before{background:var(--gold-pale);}
+.products .section-title{color:#FAF0DC;}
+.products .section-sub{color:rgba(250,240,220,0.6);}
+.prod-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2.8rem;}
+.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;}
+.prod-card{background:rgba(255,255,255,0.045);border:0.5px solid rgba(200,134,10,0.2);border-radius:3px;overflow:hidden;cursor:pointer;transition:transform 0.25s,border-color 0.25s;}
+.prod-card:hover{transform:translateY(-6px);border-color:rgba(200,134,10,0.55);}
+.prod-img{position:relative;height:220px;overflow:hidden;background:#2A1400;}
+.prod-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
+.prod-card:hover .prod-img img{transform:scale(1.06);}
+.prod-badge{position:absolute;top:10px;right:10px;background:var(--gold);color:#1A0C00;font-size:0.6rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;}
+.prod-info{padding:1.2rem;}
+.prod-name{font-family:var(--serif);font-size:1.1rem;font-weight:400;color:#FAF0DC;margin-bottom:0.25rem;}
+.prod-src{font-size:0.7rem;color:var(--gold-pale);letter-spacing:0.08em;margin-bottom:0.7rem;}
+.prod-stars{color:var(--gold);font-size:0.73rem;margin-bottom:0.7rem;}
+.prod-price-row{display:flex;justify-content:space-between;align-items:center;}
+.prod-price{font-family:var(--serif);font-size:1.15rem;color:var(--gold-pale);}
+.add-btn{background:var(--gold);color:#1A0C00;border:none;padding:0.38rem 0.9rem;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;border-radius:2px;cursor:pointer;transition:background 0.2s;}
+.add-btn:hover{background:var(--gold-light);}
+
+/* HONEY TYPES */
+.honey-types{background:var(--cream);}
+.honey-types-inner{max-width:1200px;margin:0 auto;}
+.htabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:2.8rem;overflow-x:auto;}
+.htab{padding:0.75rem 1.5rem;font-size:0.78rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-light);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s;white-space:nowrap;}
+.htab.active{color:var(--amber-deep);border-bottom-color:var(--amber-deep);}
+.htab:hover{color:var(--amber-deep);}
+.honey-detail{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.honey-vis{height:400px;border-radius:3px;overflow:hidden;position:relative;}
+.honey-vis img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
+.honey-vis:hover img{transform:scale(1.04);}
+.honey-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(58,20,0,0.55),transparent 50%);}
+.honey-vis-label{position:absolute;bottom:1.5rem;left:1.5rem;font-family:var(--serif);font-size:1.8rem;font-style:italic;color:#fff;}
+.honey-profile h2{font-family:var(--serif);font-size:2.3rem;font-weight:300;color:var(--brown);margin-bottom:0.8rem;}
+.honey-attrs{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;margin:1.4rem 0;}
+.attr-item{padding:0.9rem;background:#fff;border:0.5px solid var(--border);border-radius:2px;}
+.attr-label{font-size:0.65rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-light);}
+.attr-val{font-family:var(--serif);font-size:1.05rem;color:var(--amber-deep);margin-top:0.2rem;}
+
+/* PROCESS */
+.process{background:var(--warm-white);}
+.process-inner{max-width:1100px;margin:0 auto;}
+.steps-wrap{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:0.8rem;margin-top:3.5rem;}
+.steps-wrap::before{content:'';position:absolute;top:27px;left:6%;right:6%;height:1px;background:linear-gradient(90deg,transparent,var(--gold-pale) 20%,var(--gold) 50%,var(--gold-pale) 80%,transparent);z-index:0;}
+.step{text-align:center;position:relative;z-index:1;}
+.step-circle{width:54px;height:54px;border-radius:50%;background:var(--cream);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 0.9rem;font-size:1.3rem;box-shadow:0 0 0 6px var(--warm-white);}
+.step-label{font-size:0.76rem;font-weight:500;color:var(--text-mid);}
+.step-sub{font-size:0.65rem;color:var(--text-light);margin-top:0.2rem;}
+
+/* BLOG */
+.wellness{background:var(--cream);}
+.wellness-inner{max-width:1200px;margin:0 auto;}
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.8rem;}
+.blog-card{background:var(--warm-white);border:0.5px solid var(--border);border-radius:3px;overflow:hidden;transition:transform 0.22s;}
+.blog-card:hover{transform:translateY(-4px);}
+.blog-img{height:200px;overflow:hidden;}
+.blog-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
+.blog-card:hover .blog-img img{transform:scale(1.06);}
+.blog-content{padding:1.3rem;}
+.blog-tag{font-size:0.66rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem;}
+.blog-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--brown);line-height:1.35;margin-bottom:0.5rem;}
+.blog-excerpt{font-size:0.83rem;color:var(--text-mid);line-height:1.72;}
+.blog-link{display:inline-block;margin-top:0.9rem;font-size:0.72rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber-deep);text-decoration:none;border-bottom:1px solid var(--amber-deep);padding-bottom:1px;}
+
+/* TRUST */
+.trust{background:var(--warm-white);}
+.trust-inner{max-width:1200px;margin:0 auto;}
+.trust-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-top:3rem;}
+.trust-card{border:0.5px solid var(--border);border-radius:3px;padding:1.8rem 1.4rem;text-align:center;background:var(--cream);transition:box-shadow 0.22s;}
+.trust-card:hover{box-shadow:0 8px 30px rgba(122,59,8,0.09);}
+.trust-icon{font-size:1.8rem;margin-bottom:1rem;}
+.trust-card h4{font-family:var(--serif);font-size:1.08rem;font-weight:400;color:var(--brown);margin-bottom:0.4rem;}
+.trust-card p{font-size:0.82rem;color:var(--text-mid);line-height:1.68;}
+
+/* TESTIMONIALS */
+.testimonials{background:var(--cream);}
+.testi-inner{max-width:1200px;margin:0 auto;}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.8rem;}
+.testi-card{background:var(--warm-white);border:0.5px solid var(--border);border-radius:3px;padding:1.8rem;position:relative;}
+.testi-quote{font-family:var(--serif);font-size:3rem;line-height:1;color:var(--gold-pale);position:absolute;top:0.8rem;left:1.4rem;}
+.testi-stars{color:var(--gold);font-size:0.72rem;margin-bottom:0.6rem;}
+.testi-text{font-family:var(--serif);font-size:1rem;font-style:italic;color:var(--brown);line-height:1.72;margin-top:1.4rem;}
+.testi-author{margin-top:1.3rem;padding-top:0.9rem;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:0.8rem;}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold-pale),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:0.9rem;color:var(--amber-deep);flex-shrink:0;}
+.testi-name{font-weight:500;font-size:0.83rem;color:var(--brown);}
+.testi-loc{font-size:0.7rem;color:var(--text-light);}
+
+/* WHATSAPP */
+.wa-section{background:var(--amber-deep);padding:5rem 5%;}
+.wa-inner{max-width:780px;margin:0 auto;text-align:center;}
+.wa-inner .section-label{justify-content:center;color:var(--gold-pale);}
+.wa-inner .section-label::before{background:var(--gold-pale);}
+.wa-inner .section-title{color:#FAF0DC;}
+.wa-inner .section-sub{color:rgba(250,240,220,0.72);margin:0 auto 2rem;text-align:center;}
+.wa-btn{display:inline-flex;align-items:center;gap:0.65rem;background:#25D366;color:#fff;padding:0.95rem 2.2rem;border-radius:2px;font-family:var(--sans);font-size:0.88rem;font-weight:500;letter-spacing:0.08em;text-decoration:none;transition:background 0.2s;}
+.wa-btn:hover{background:#1ebe5d;}
+.wa-note{margin-top:1.4rem;font-size:0.78rem;color:rgba(250,240,220,0.5);letter-spacing:0.06em;}
+
+/* FAQ */
+.faq{background:var(--warm-white);}
+.faq-inner{max-width:780px;margin:0 auto;}
+.faq-item{border-bottom:0.5px solid var(--border);}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 0;cursor:pointer;font-family:var(--serif);font-size:1.02rem;font-weight:400;color:var(--brown);gap:1rem;}
+.faq-arr{font-size:1rem;color:var(--gold);transition:transform 0.22s;flex-shrink:0;}
+.faq-item.open .faq-arr{transform:rotate(180deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.32s ease;font-size:0.88rem;color:var(--text-mid);line-height:1.78;}
+.faq-item.open .faq-a{max-height:250px;padding-bottom:1.2rem;}
+
+/* FINAL CTA */
+.final-cta{background:linear-gradient(160deg,#3D1F08,#150800);padding:8rem 5%;text-align:center;position:relative;overflow:hidden;}
+.final-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(200,134,10,0.14),transparent 65%);}
+.final-cta-content{position:relative;z-index:1;max-width:620px;margin:0 auto;}
+.final-cta .section-label{justify-content:center;color:var(--gold-pale);}
+.final-cta .section-label::before{background:var(--gold-pale);}
+.final-cta h2{font-family:var(--serif);font-size:clamp(2.3rem,4.5vw,4.2rem);font-weight:300;color:#FAF0DC;line-height:1.12;margin-bottom:1rem;}
+.final-cta h2 em{font-style:italic;color:var(--gold-light);}
+.final-cta p{color:rgba(250,240,220,0.62);font-size:0.98rem;line-height:1.8;margin-bottom:2.4rem;}
+.final-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+.btn-gold{background:var(--gold);color:#1A0C00;padding:1rem 2.4rem;border:none;border-radius:2px;font-family:var(--sans);font-size:0.83rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:background 0.2s;display:inline-block;}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-ghost{background:transparent;color:rgba(250,240,220,0.82);padding:1rem 2.4rem;border:0.5px solid rgba(200,134,10,0.38);border-radius:2px;font-family:var(--sans);font-size:0.83rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s;display:inline-block;}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+/* FOOTER */
+footer{background:#0A0400;padding:4rem 5% 2rem;color:rgba(250,240,220,0.58);}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;}
+.footer-logo{font-family:var(--serif);font-size:1.4rem;font-weight:600;color:var(--gold-pale);margin-bottom:0.9rem;display:flex;align-items:center;gap:0.5rem;}
+.footer-logo img{height:38px;width:auto;filter:brightness(0) invert(1);opacity:0.7;}
+.footer-brand p{font-size:0.83rem;line-height:1.78;max-width:250px;}
+.footer-social{display:flex;gap:0.7rem;margin-top:1.2rem;}
+.soc-btn{width:32px;height:32px;border-radius:50%;border:0.5px solid rgba(200,134,10,0.28);display:flex;align-items:center;justify-content:center;color:var(--gold-pale);font-size:0.75rem;cursor:pointer;text-decoration:none;transition:border-color 0.2s,color 0.2s;}
+.soc-btn:hover{border-color:var(--gold);color:var(--gold);}
+.footer-col h5{font-size:0.7rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-pale);margin-bottom:1.1rem;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:0.55rem;}
+.footer-col a{font-size:0.83rem;color:rgba(250,240,220,0.52);text-decoration:none;transition:color 0.2s;}
+.footer-col a:hover{color:var(--gold-pale);}
+.footer-bottom{border-top:0.5px solid rgba(200,134,10,0.12);padding-top:1.4rem;display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;flex-wrap:wrap;gap:0.5rem;}
+.footer-certs{display:flex;gap:0.7rem;}
+.cert-pill{padding:0.28rem 0.7rem;border:0.5px solid rgba(200,134,10,0.28);border-radius:2px;font-size:0.62rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-pale);}
+.nl-wrap{margin-top:1.4rem;}
+.nl-wrap label{font-size:0.76rem;display:block;margin-bottom:0.45rem;}
+.nl-row{display:flex;}
+.nl-input{background:rgba(255,255,255,0.06);border:0.5px solid rgba(200,134,10,0.22);color:rgba(250,240,220,0.78);padding:0.6rem 1rem;font-family:var(--sans);font-size:0.8rem;border-radius:2px 0 0 2px;flex:1;outline:none;}
+.nl-btn{background:var(--gold);color:#1A0C00;border:none;padding:0.6rem 1.1rem;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;border-radius:0 2px 2px 0;cursor:pointer;}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .prod-grid{grid-template-columns:repeat(2,1fr);}
+  .why-cards{grid-template-columns:1fr 1fr;}
+  .trust-cards{grid-template-columns:1fr 1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+  .steps-wrap{grid-template-columns:repeat(3,1fr);}
+  .steps-wrap::before{display:none;}
+}
+@media(max-width:768px){
+  nav{padding:0.9rem 4%;}
+  .nav-links,.nav-cta{display:none;}
+  .hamburger{display:flex;}
+  .hero{grid-template-columns:1fr;padding:6.5rem 4% 3rem;gap:2rem;}
+  .hero-visual{order:-1;}
+  .hero-img-wrap{width:260px;margin:0 auto;}
+  .hero-img-wrap img{height:320px;}
+  section{padding:4rem 4%;}
+  .story-grid{grid-template-columns:1fr;gap:2.5rem;}
+  .story-collage{height:300px;}
+  .why-cards{grid-template-columns:1fr;}
+  .prod-grid{grid-template-columns:1fr 1fr;}
+  .honey-detail{grid-template-columns:1fr;gap:2rem;}
+  .blog-grid{grid-template-columns:1fr;}
+  .trust-cards{grid-template-columns:1fr 1fr;}
+  .testi-grid{grid-template-columns:1fr;}
+  .final-cta{padding:5rem 4%;}
+  footer{padding:3rem 4% 1.5rem;}
+  .footer-grid{grid-template-columns:1fr;gap:2rem;}
+  .footer-bottom{flex-direction:column;align-items:flex-start;}
+  .prod-header{flex-direction:column;align-items:flex-start;gap:1rem;}
+  .steps-wrap{grid-template-columns:repeat(2,1fr);}
+  .wa-section{padding:4rem 4%;}
+}
+@media(max-width:480px){
+  .prod-grid{grid-template-columns:1fr;}
+  .trust-cards{grid-template-columns:1fr;}
+  .hero-btns{flex-direction:column;}
+  .final-btns{flex-direction:column;align-items:center;}
+  .story-stats{flex-direction:column;gap:1rem;}
+  .honey-attrs{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+    <a class="nav-logo" href="https://beefreshhoney.com" target="_blank">
+        <img src="https://beefreshhoney.com/wp-content/uploads/2024/11/Bee_fresh_logo-removebg-preview-1.png" alt="Bee Fresh Honey" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <span style="display:none">🍯 Bee Fresh Honey</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="#products">Products</a></li>
+        <li><a href="#story">Our Story</a></li>
+        <li><a href="#process">Process</a></li>
+        <li><a href="#wellness">Wellness</a></li>
+        <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a class="nav-cta" href="https://wa.me/919000000000" target="_blank">Order Now</a>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="mob-nav" id="mobNav">
+    <button class="mob-close" onclick="toggleNav()">✕</button>
+    <a href="#products" onclick="toggleNav()">Products</a>
+    <a href="#story" onclick="toggleNav()">Our Story</a>
+    <a href="#process" onclick="toggleNav()">Process</a>
+    <a href="#wellness" onclick="toggleNav()">Wellness</a>
+    <a href="#faq" onclick="toggleNav()">FAQ</a>
+    <a href="https://wa.me/919000000000" target="_blank">Order on WhatsApp</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-content reveal">
+        <div class="hero-eyebrow">Farm to Home · Unprocessed · NMR Tested</div>
+        <h1>Pure Honey.<br><em>Straight From</em><br>Nature.</h1>
+        <p class="hero-sub">Experience authentic unprocessed honey crafted with care by trusted beekeepers across India's richest floral landscapes.</p>
+        <div class="hero-btns">
+            <a class="btn-primary" href="#products">Explore Collection</a>
+            <a class="btn-outline" href="#process">Learn Our Process</a>
+        </div>
+        <div class="hero-badges">
+            <div class="badge"><span class="badge-dot"></span>Unprocessed</div>
+            <div class="badge"><span class="badge-dot"></span>No Added Sugar</div>
+            <div class="badge"><span class="badge-dot"></span>NMR Tested</div>
+            <div class="badge"><span class="badge-dot"></span>Farm Sourced</div>
+            <div class="badge"><span class="badge-dot"></span>100% Pure</div>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="hero-img-wrap">
+            <div class="hero-glow"></div>
+            <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/tulasi-1-kg-2.jpg" alt="Bee Fresh Tulasi Honey" loading="eager"/>
+        </div>
+    </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-bar" aria-hidden="true">
+    <div class="marquee-track">
+        <span>Pure · Unprocessed Honey</span><span class="sep">✦</span>
+        <span>NMR Tested for Purity</span><span class="sep">✦</span>
+        <span>Farm Sourced Across India</span><span class="sep">✦</span>
+        <span>No Added Sugar or Preservatives</span><span class="sep">✦</span>
+        <span>Tulasi · Multifloral · Sunflower · Ajwain</span><span class="sep">✦</span>
+        <span>Free Shipping on Every Order</span><span class="sep">✦</span>
+        <span>Pure · Unprocessed Honey</span><span class="sep">✦</span>
+        <span>NMR Tested for Purity</span><span class="sep">✦</span>
+        <span>Farm Sourced Across India</span><span class="sep">✦</span>
+        <span>No Added Sugar or Preservatives</span><span class="sep">✦</span>
+        <span>Tulasi · Multifloral · Sunflower · Ajwain</span><span class="sep">✦</span>
+        <span>Free Shipping on Every Order</span><span class="sep">✦</span>
+    </div>
+</div>
+
+<!-- STORY -->
+<section class="story" id="story">
+    <div class="story-grid">
+        <div class="story-collage reveal">
+            <div class="story-img-a">
+                <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/29-1-1.jpg" alt="Bee Fresh beekeeper with hive"/>
+                <div class="story-tag">Est. with Love</div>
+            </div>
+            <div class="story-img-b">
+                <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/28.jpg" alt="Natural honey extraction"/>
+            </div>
+        </div>
+        <div class="reveal">
+            <div class="section-label">Our Story</div>
+            <h2 class="section-title">Born from a<br>love of <em>nature's</em><br>finest gift</h2>
+            <p class="section-sub" style="margin-bottom:1.1rem;">Bee Fresh Honey began with a simple belief — that pure, unprocessed honey carries the soul of the flowers it comes from. We work directly with beekeepers who share our reverence for nature, sustainability, and honesty.</p>
+            <p class="section-sub">From the Tulasi fields of Telangana to the sunflower farms across India, every drop is harvested at peak ripeness, NMR tested for purity, and delivered to your home exactly as nature intended.</p>
+            <div class="story-stats">
+                <div class="stat-item">
+                    <div class="stat-num">4+</div>
+                    <div class="stat-label">Honey Varieties</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">50K+</div>
+                    <div class="stat-label">Happy Families</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">100%</div>
+                    <div class="stat-label">Pure & Natural</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHY -->
+<section class="why">
+    <div class="why-inner">
+        <div class="centered reveal">
+            <div class="section-label">Why It Matters</div>
+            <h2 class="section-title" style="text-align:center;">Why pure honey is<br>different from the rest</h2>
+            <p class="section-sub" style="text-align:center;margin:0 auto;">Most commercial honey is heated, filtered, and blended — stripping away what makes honey truly special. Here's what you get when you choose Bee Fresh.</p>
+        </div>
+        <div class="why-cards">
+            <div class="why-card reveal">
+                <div class="why-icon">🌿</div>
+                <h3>Naturally Unprocessed</h3>
+                <p>Our honey is gently filtered — never heated above natural hive temperature — preserving all naturally occurring goodness just as the bees intended.</p>
+            </div>
+            <div class="why-card reveal">
+                <div class="why-icon">🔬</div>
+                <h3>NMR Purity Tested</h3>
+                <p>Every batch undergoes Nuclear Magnetic Resonance testing — the gold standard for honey authenticity — ensuring zero adulteration, always.</p>
+            </div>
+            <div class="why-card reveal">
+                <div class="why-icon">🌸</div>
+                <h3>Single-Source Floral</h3>
+                <p>Each variety is sourced from specific flower regions, giving you distinct flavor profiles, aromas, and natural properties unique to that bloom.</p>
+            </div>
+            <div class="why-card reveal">
+                <div class="why-icon">🍯</div>
+                <h3>No Additives Ever</h3>
+                <p>No added sugars, no preservatives, no artificial flavors. Just pure honey — the way it has been harvested for thousands of years.</p>
+            </div>
+            <div class="why-card reveal">
+                <div class="why-icon">🐝</div>
+                <h3>Beekeeper Partnerships</h3>
+                <p>We partner directly with ethical beekeepers, ensuring fair trade practices, bee welfare, and a sustainable supply chain from hive to home.</p>
+            </div>
+            <div class="why-card reveal">
+                <div class="why-icon">💛</div>
+                <h3>Supports Natural Wellness</h3>
+                <p>Raw unprocessed honey contains natural enzymes, pollen, and trace minerals that support a naturally balanced, wholesome lifestyle.</p>
+            </div>
+        </div>
+        <div class="compare-wrap reveal">
+            <table class="ctable">
+                <thead>
+                <tr>
+                    <th>What You Get</th>
+                    <th>Bee Fresh Honey</th>
+                    <th>Commercial Brands</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td>Unprocessed & Raw</td><td class="good">✔ Always</td><td class="bad">✘ Rarely</td></tr>
+                <tr><td>NMR Purity Tested</td><td class="good">✔ Every Batch</td><td class="bad">✘ Not Standard</td></tr>
+                <tr><td>No Added Sugar</td><td class="good">✔ Guaranteed</td><td class="bad">✘ Often Added</td></tr>
+                <tr><td>Single-Floral Source</td><td class="good">✔ Traceable</td><td class="bad">✘ Blended</td></tr>
+                <tr><td>Natural Enzymes Intact</td><td class="good">✔ Preserved</td><td class="bad">✘ Destroyed by Heat</td></tr>
+                <tr><td>Direct from Beekeeper</td><td class="good">✔ Farm Sourced</td><td class="bad">✘ Unknown Origin</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="products" id="products">
+    <div class="products-inner">
+        <div class="prod-header">
+            <div>
+                <div class="section-label">Our Collection</div>
+                <h2 class="section-title">Premium Honey<br><em>& Bee Products</em></h2>
+            </div>
+            <a class="btn-outline" href="https://beefreshhoney.com/shop-2/" target="_blank" style="color:rgba(250,240,220,0.8);border-color:rgba(200,134,10,0.38);">View All Products</a>
+        </div>
+        <div class="prod-grid">
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/tulasi-1-kg-2.jpg" alt="Tulasi Honey" loading="lazy"/>
+                    <div class="prod-badge">Bestseller</div>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Tulasi Honey</div>
+                    <div class="prod-src">🌿 Holy Basil · Telangana</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(248)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹348 – ₹645</span>
+                        <button class="add-btn" onclick="waOrder('Tulasi Honey')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/multifloral-honey-500gm-1.jpg" alt="Multifloral Honey" loading="lazy"/>
+                    <div class="prod-badge">Sale</div>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Multifloral Honey</div>
+                    <div class="prod-src">🌺 Wildflowers · Western Ghats</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(189)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹275 – ₹500</span>
+                        <button class="add-btn" onclick="waOrder('Multifloral Honey')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/03/Sunflower-500-gm-1.jpg" alt="Sunflower Honey" loading="lazy"/>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Sunflower Honey</div>
+                    <div class="prod-src">🌻 Sunflower Fields · Rajasthan</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(97)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹350 – ₹650</span>
+                        <button class="add-btn" onclick="waOrder('Sunflower Honey')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/ajwain-1-kg-1.jpg" alt="Ajwain Honey" loading="lazy"/>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Ajwain Honey</div>
+                    <div class="prod-src">🌾 Carom Flowers · Punjab</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(142)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹350 – ₹650</span>
+                        <button class="add-btn" onclick="waOrder('Ajwain Honey')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2024/11/honey-soap.jpg" alt="Honey Soap" loading="lazy"/>
+                    <div class="prod-badge">Sale</div>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Honey Soap</div>
+                    <div class="prod-src">🍯 Natural Honey & Beeswax</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(76)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹150</span>
+                        <button class="add-btn" onclick="waOrder('Honey Soap')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/Multifloral-1kg-1.jpg" alt="Multifloral Honey 1kg" loading="lazy"/>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Multifloral 1 kg</div>
+                    <div class="prod-src">🌿 Best Value · Family Pack</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(88)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹500</span>
+                        <button class="add-btn" onclick="waOrder('Multifloral Honey 1kg')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/Sunflower-1kg.jpg" alt="Sunflower Honey 1kg" loading="lazy"/>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Sunflower 1 kg</div>
+                    <div class="prod-src">🌻 Family Size · Best Value</div>
+                    <div class="prod-stars">★★★★☆ <span style="color:var(--text-light);font-size:0.68rem;">(64)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹650</span>
+                        <button class="add-btn" onclick="waOrder('Sunflower Honey 1kg')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prod-card reveal">
+                <div class="prod-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/Ajwain-1kg-1.jpg" alt="Ajwain Honey 1kg" loading="lazy"/>
+                    <div class="prod-badge">Popular</div>
+                </div>
+                <div class="prod-info">
+                    <div class="prod-name">Ajwain 1 kg</div>
+                    <div class="prod-src">🌾 Premium Carom · 1kg Pack</div>
+                    <div class="prod-stars">★★★★★ <span style="color:var(--text-light);font-size:0.68rem;">(112)</span></div>
+                    <div class="prod-price-row">
+                        <span class="prod-price">₹650</span>
+                        <button class="add-btn" onclick="waOrder('Ajwain Honey 1kg')">Order</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- HONEY TYPES -->
+<section class="honey-types">
+    <div class="honey-types-inner">
+        <div class="section-label">Flavor Profiles</div>
+        <h2 class="section-title">Explore each<br><em>honey's</em> character</h2>
+        <div class="htabs">
+            <button class="htab active" onclick="showHoney(0,this)">Tulasi</button>
+            <button class="htab" onclick="showHoney(1,this)">Multifloral</button>
+            <button class="htab" onclick="showHoney(2,this)">Sunflower</button>
+            <button class="htab" onclick="showHoney(3,this)">Ajwain</button>
+        </div>
+        <div class="honey-detail reveal" id="honeyDetail"></div>
+    </div>
+</section>
+
+<!-- PROCESS -->
+<section class="process" id="process">
+    <div class="process-inner">
+        <div class="centered reveal">
+            <div class="section-label">From Hive to Home</div>
+            <h2 class="section-title" style="text-align:center;">Our <em>pure</em> process</h2>
+            <p class="section-sub" style="text-align:center;margin:0 auto;">Every jar travels through a careful, minimal journey — honoring the bees' work and preserving every drop of nature's goodness.</p>
+        </div>
+        <div class="steps-wrap">
+            <div class="step reveal"><div class="step-circle">🐝</div><div class="step-label">Bees at Work</div><div class="step-sub">Natural foraging</div></div>
+            <div class="step reveal"><div class="step-circle">🌸</div><div class="step-label">Flower Sourcing</div><div class="step-sub">Single-origin farms</div></div>
+            <div class="step reveal"><div class="step-circle">🍯</div><div class="step-label">Gentle Harvest</div><div class="step-sub">Low-impact extraction</div></div>
+            <div class="step reveal"><div class="step-circle">🔬</div><div class="step-label">NMR Testing</div><div class="step-sub">Purity certified</div></div>
+            <div class="step reveal"><div class="step-circle">📦</div><div class="step-label">Packaging</div><div class="step-sub">Sealed fresh</div></div>
+            <div class="step reveal"><div class="step-circle">🏡</div><div class="step-label">Your Home</div><div class="step-sub">Direct delivery</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- WELLNESS -->
+<section class="wellness" id="wellness">
+    <div class="wellness-inner">
+        <div class="section-label">Wellness & Recipes</div>
+        <h2 class="section-title">Live sweeter,<br><em>naturally</em></h2>
+        <p class="section-sub">Discover how pure honey elevates your mornings, nourishes your body, and brings warmth to your daily routines.</p>
+        <div class="blog-grid">
+            <div class="blog-card reveal">
+                <div class="blog-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/tulasi-500-gm-2.jpg" alt="Tulasi honey morning ritual" loading="lazy"/>
+                </div>
+                <div class="blog-content">
+                    <div class="blog-tag">Morning Ritual</div>
+                    <div class="blog-title">Start Your Day with Warm Tulasi Honey Water</div>
+                    <p class="blog-excerpt">A gentle morning ritual with warm water and pure Tulasi honey — naturally soothing, grounding, and a wholesome way to begin your day.</p>
+                    <a class="blog-link" href="https://beefreshhoney.com" target="_blank">Read More →</a>
+                </div>
+            </div>
+            <div class="blog-card reveal">
+                <div class="blog-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/27.jpg" alt="Ajwain honey recipe" loading="lazy"/>
+                </div>
+                <div class="blog-content">
+                    <div class="blog-tag">Recipe</div>
+                    <div class="blog-title">Golden Turmeric Honey Latte at Home</div>
+                    <p class="blog-excerpt">Our Ajwain honey pairs beautifully with turmeric and warm milk for a cozy, traditional wellness drink that supports natural wellbeing.</p>
+                    <a class="blog-link" href="https://beefreshhoney.com" target="_blank">Read More →</a>
+                </div>
+            </div>
+            <div class="blog-card reveal">
+                <div class="blog-img">
+                    <img src="https://beefreshhoney.com/wp-content/uploads/2022/01/multifloral-honey-500gm-2.jpg" alt="Honey skincare" loading="lazy"/>
+                </div>
+                <div class="blog-content">
+                    <div class="blog-tag">Natural Skincare</div>
+                    <div class="blog-title">The Honey Face Mask Your Skin Will Love</div>
+                    <p class="blog-excerpt">Raw honey makes an exceptional natural face mask — its humectant properties help your skin feel soft, hydrated, and naturally radiant.</p>
+                    <a class="blog-link" href="https://beefreshhoney.com" target="_blank">Read More →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust">
+    <div class="trust-inner">
+        <div class="centered reveal">
+            <div class="section-label">Trust & Quality</div>
+            <h2 class="section-title" style="text-align:center;">Our commitment<br>to <em>purity</em></h2>
+            <p class="section-sub" style="text-align:center;margin:0 auto;">Every jar of Bee Fresh Honey is backed by rigorous testing and ethical sourcing standards you can trust.</p>
+        </div>
+        <div class="trust-cards">
+            <div class="trust-card reveal">
+                <div class="trust-icon">🔬</div>
+                <h4>NMR Tested</h4>
+                <p>Nuclear Magnetic Resonance spectroscopy confirms zero adulteration in every single batch we produce.</p>
+            </div>
+            <div class="trust-card reveal">
+                <div class="trust-icon">📋</div>
+                <h4>FSSAI Certified</h4>
+                <p>Fully compliant with India's Food Safety and Standards Authority regulations for honey and bee products.</p>
+            </div>
+            <div class="trust-card reveal">
+                <div class="trust-icon">🌾</div>
+                <h4>Traceable Sourcing</h4>
+                <p>Every honey variety is traceable to its specific floral source region, beekeeper, and harvest season.</p>
+            </div>
+            <div class="trust-card reveal">
+                <div class="trust-icon">♻️</div>
+                <h4>Eco Responsible</h4>
+                <p>We support bee conservation, use minimal processing, and choose sustainable packaging wherever possible.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+    <div class="testi-inner">
+        <div class="section-label">What Families Say</div>
+        <h2 class="section-title">Trusted by<br><em>thousands</em> of homes</h2>
+        <div class="testi-grid">
+            <div class="testi-card reveal">
+                <div class="testi-quote">"</div>
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">I switched to Bee Fresh Tulasi Honey six months ago and I can genuinely taste the difference. There's a warmth and depth that store brands simply don't have. My whole family loves it.</p>
+                <div class="testi-author">
+                    <div class="testi-avatar">P</div>
+                    <div><div class="testi-name">Priya Nair</div><div class="testi-loc">Kochi, Kerala</div></div>
+                </div>
+            </div>
+            <div class="testi-card reveal">
+                <div class="testi-quote">"</div>
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">As someone particular about what I eat, the NMR testing certificate gave me complete confidence. This is the real deal — pure, raw, and absolutely delicious in my morning chai.</p>
+                <div class="testi-author">
+                    <div class="testi-avatar">R</div>
+                    <div><div class="testi-name">Rahul Sharma</div><div class="testi-loc">Mumbai, Maharashtra</div></div>
+                </div>
+            </div>
+            <div class="testi-card reveal">
+                <div class="testi-quote">"</div>
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">Ordered the Ajwain honey for my parents and they were so pleased. You can actually tell this is unprocessed — the crystallization is natural and the flavor is rich and authentic.</p>
+                <div class="testi-author">
+                    <div class="testi-avatar">A</div>
+                    <div><div class="testi-name">Anita Krishnan</div><div class="testi-loc">Chennai, Tamil Nadu</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHATSAPP -->
+<section class="wa-section">
+    <div class="wa-inner reveal">
+        <div class="section-label">Quick Order</div>
+        <h2 class="section-title">Order in seconds<br><em>via WhatsApp</em></h2>
+        <p class="section-sub">Skip the forms. Just message us directly on WhatsApp and we'll help you choose, order, and arrange doorstep delivery across India. Fast, personal, and easy.</p>
+        <a class="wa-btn" href="https://wa.me/919000000000?text=Hi!%20I'd%20like%20to%20order%20Bee%20Fresh%20Honey" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.927l6.245-1.641A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.371l-.36-.213-3.707.975.99-3.614-.235-.374A9.818 9.818 0 1112 21.818z"/></svg>
+            Order on WhatsApp
+        </a>
+        <div class="wa-note">Pan-India Delivery · Same Day Dispatch · Subscription Plans Available</div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+    <div class="faq-inner">
+        <div class="centered reveal">
+            <div class="section-label">Common Questions</div>
+            <h2 class="section-title" style="text-align:center;">Frequently asked</h2>
+        </div>
+        <div id="faqList"></div>
+    </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+    <div class="final-cta-content reveal">
+        <div class="section-label">Start Today</div>
+        <h2>Taste honey <em>the way<br>nature</em> intended.</h2>
+        <p>Join thousands of families who have made the switch to pure, unprocessed, truly natural honey. Your first jar will tell you everything you need to know.</p>
+        <div class="final-btns">
+            <a class="btn-gold" href="https://beefreshhoney.com/shop-2/" target="_blank">Shop Pure Honey</a>
+            <a class="btn-ghost" href="https://wa.me/919000000000" target="_blank">Start Healthy Living</a>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-grid">
+        <div>
+            <div class="footer-logo">
+                <img src="https://beefreshhoney.com/wp-content/uploads/2024/11/Bee_fresh_logo-removebg-preview-1.png" alt="Bee Fresh Honey" onerror="this.style.display='none'"/>
+                <span>🍯 Bee Fresh Honey</span>
+            </div>
+            <p>Pure, unprocessed honey sourced directly from ethical beekeepers across India. NMR tested. Farm to home. Hyderabad, Telangana.</p>
+            <div class="nl-wrap">
+                <label>Join our honey community</label>
+                <div class="nl-row">
+                    <input class="nl-input" type="email" placeholder="your@email.com"/>
+                    <button class="nl-btn">Join</button>
+                </div>
+            </div>
+            <div class="footer-social" style="margin-top:1.2rem;">
+                <a class="soc-btn" href="https://www.facebook.com/beefreshproducts/" target="_blank" title="Facebook">f</a>
+                <a class="soc-btn" href="https://beefreshhoney.com" target="_blank" title="Instagram">ig</a>
+                <a class="soc-btn" href="https://wa.me/919000000000" target="_blank" title="WhatsApp">wa</a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h5>Products</h5>
+            <ul>
+                <li><a href="https://beefreshhoney.com/product/tulasi-honey/" target="_blank">Tulasi Honey</a></li>
+                <li><a href="https://beefreshhoney.com/product/multifloral-honey/" target="_blank">Multifloral Honey</a></li>
+                <li><a href="https://beefreshhoney.com/product/sunflower-honey/" target="_blank">Sunflower Honey</a></li>
+                <li><a href="https://beefreshhoney.com/product/ajwain-honey/" target="_blank">Ajwain Honey</a></li>
+                <li><a href="https://beefreshhoney.com/product/honey-soap/" target="_blank">Honey Soap</a></li>
+                <li><a href="https://beefreshhoney.com/shop-2/" target="_blank">All Products</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h5>Company</h5>
+            <ul>
+                <li><a href="https://beefreshhoney.com/about-us/" target="_blank">About Us</a></li>
+                <li><a href="https://beefreshhoney.com/contact-us/" target="_blank">Contact Us</a></li>
+                <li><a href="https://beefreshhoney.com/shop-2/" target="_blank">Shop</a></li>
+                <li><a href="https://beefreshhoney.com" target="_blank">Home</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h5>Support</h5>
+            <ul>
+                <li><a href="https://beefreshhoney.com/shipping-policy/" target="_blank">Shipping Policy</a></li>
+                <li><a href="https://beefreshhoney.com/refund-and-returns-policy/" target="_blank">Returns Policy</a></li>
+                <li><a href="https://beefreshhoney.com/privacy-policy/" target="_blank">Privacy Policy</a></li>
+                <li><a href="https://beefreshhoney.com/terms-conditions/" target="_blank">Terms & Conditions</a></li>
+                <li><a href="https://wa.me/919000000000" target="_blank">WhatsApp Us</a></li>
+                <li><a href="https://maps.app.goo.gl/rr4DvH3wCC5XeifeA" target="_blank">Find Our Store</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© 2026 Bee Fresh Honey · Kothapet, Hyderabad, Telangana 500035</div>
+        <div class="footer-certs">
+            <div class="cert-pill">NMR Tested</div>
+            <div class="cert-pill">FSSAI</div>
+            <div class="cert-pill">100% Pure</div>
+        </div>
+    </div>
+</footer>
+
+<script>
+/* NAV */
+window.addEventListener('scroll',()=>{
+  document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>40);
+});
+function toggleNav(){
+  document.getElementById('mobNav').classList.toggle('open');
+}
+
+/* HONEY DATA */
+const honeys=[
+  {
+    name:'Tulasi Honey',
+    img:'https://beefreshhoney.com/wp-content/uploads/2022/01/Tulasi-1kg-2.jpg',
+    origin:'Holy Basil farms, Telangana',
+    desc:'We install our beehive colonies inside fields of blooming wild Tulasi flowers, with 70% of bees depending on Tulasi nectar. Revered in Ayurvedic tradition, this golden honey carries a gentle herbal sweetness unlike any other.',
+    flavor:'Mildly sweet with subtle herbal undertones',
+    texture:'Medium viscosity, smooth flow',
+    aroma:'Light floral with a hint of holy basil',
+    use:'Morning water, herbal teas, face masks',
+    price:'₹348 – ₹645',
+    link:'https://beefreshhoney.com/product/tulasi-honey/'
+  },
+  {
+    name:'Multifloral Honey',
+    img:'https://beefreshhoney.com/wp-content/uploads/2022/01/Multifloral-1kg-1.jpg',
+    origin:'Wildflower meadows, forests & farms',
+    desc:'We install hives in vegetable fields, fruit farms, and forest areas. Multifloral honey comes from the nectar of various vegetation types including herbs and medicinal plants in less-polluted forest environments.',
+    flavor:'Complex, rich and layered sweetness',
+    texture:'Thicker consistency, robust body',
+    aroma:'Bouquet of wildflowers and fresh meadow',
+    use:'Cooking, baking, salad dressings',
+    price:'₹275 – ₹500',
+    link:'https://beefreshhoney.com/product/multifloral-honey/'
+  },
+  {
+    name:'Sunflower Honey',
+    img:'https://beefreshhoney.com/wp-content/uploads/2022/01/sunflower-honey-1kg-1.jpg',
+    origin:'Sunflower farms across India',
+    desc:'Harvested from beehives placed in vast sunflower fields, this bright golden honey has a clean, mild sweetness perfect for everyday use. Its natural tendency to crystallize is a true sign of purity.',
+    flavor:'Bright, buttery and gently sweet',
+    texture:'Tends to crystallize naturally — a purity sign',
+    aroma:'Fresh, clean, lightly floral',
+    use:'Spread on toast, yogurt, smoothies',
+    price:'₹350 – ₹650',
+    link:'https://beefreshhoney.com/product/sunflower-honey/'
+  },
+  {
+    name:'Ajwain Honey',
+    img:'https://beefreshhoney.com/wp-content/uploads/2022/01/Ajwain-1kg-1.jpg',
+    origin:'Carom flower fields, North India',
+    desc:'We install hives inside blooming Ajwain flower fields, with 70% of bees collecting nectar from carom blossoms. High in Omega-6 fatty acids, this distinctly warming honey gives relief from acidity and indigestion.',
+    flavor:'Distinctive, slightly pungent with warm finish',
+    texture:'Smooth, medium-thick flow',
+    aroma:'Unique spiced warmth, distinctly carom',
+    use:'Post-meal digestive, winter drinks',
+    price:'₹350 – ₹650',
+    link:'https://beefreshhoney.com/product/ajwain-honey/'
+  }
+];
+
+function showHoney(idx,btn){
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const h=honeys[idx];
+  document.getElementById('honeyDetail').innerHTML=`
+    <div class="honey-vis">
+      <img src="${h.img}" alt="${h.name}" loading="lazy"/>
+      <div class="honey-overlay"></div>
+      <div class="honey-vis-label">${h.name.split(' ')[0]}</div>
+    </div>
+    <div class="honey-profile">
+      <div class="section-label" style="margin-bottom:0.4rem;">${h.origin}</div>
+      <h2>${h.name}</h2>
+      <p style="color:var(--text-mid);line-height:1.78;font-size:0.9rem;margin-bottom:0.5rem;">${h.desc}</p>
+      <div class="honey-attrs">
+        <div class="attr-item"><div class="attr-label">Flavor</div><div class="attr-val">${h.flavor}</div></div>
+        <div class="attr-item"><div class="attr-label">Texture</div><div class="attr-val">${h.texture}</div></div>
+        <div class="attr-item"><div class="attr-label">Aroma</div><div class="attr-val">${h.aroma}</div></div>
+        <div class="attr-item"><div class="attr-label">Best Used For</div><div class="attr-val">${h.use}</div></div>
+      </div>
+      <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+        <a class="btn-primary" href="${h.link}" target="_blank">Buy ${h.name.split(' ')[0]} Honey — ${h.price}</a>
+      </div>
+    </div>
+  `;
+}
+showHoney(0,document.querySelector('.htab'));
+
+/* FAQ */
+const faqs=[
+  {q:'What makes Bee Fresh Honey different from supermarket honey?',a:'Our honey is unprocessed and unheated — unlike most commercial brands which pasteurise and ultra-filter their honey, destroying natural enzymes and pollen. Every batch is NMR tested to certify zero adulteration.'},
+  {q:'What is NMR testing?',a:'Nuclear Magnetic Resonance (NMR) spectroscopy is the gold standard for honey authenticity. It analyses the molecular fingerprint of honey to confirm it is 100% pure, with no added sugars, corn syrup, or other adulterants.'},
+  {q:'Why has my honey crystallized?',a:'Crystallization is a completely natural process and a sign of pure, unprocessed honey. It does not mean the honey has spoiled. Simply warm the jar gently in lukewarm water (never boil or microwave) to restore its liquid form.'},
+  {q:'Do you ship across India?',a:'Yes! We deliver pan-India. Orders are dispatched within 24 hours and typically arrive within 3-5 business days. You can also visit our store at 1258/N, Shop No 11-13, Kothapet, Hyderabad.'},
+  {q:'Can I set up a recurring subscription?',a:'Absolutely. Message us on WhatsApp and we will set up a monthly subscription at a discounted rate. Never run out of pure honey again.'},
+  {q:'Are your products suitable for children?',a:'Our honey is pure and natural. However, honey should not be given to children under 12 months of age. For older children and adults, pure unprocessed honey is a wholesome natural food.'},
+];
+const fl=document.getElementById('faqList');
+faqs.forEach((f,i)=>{
+  const el=document.createElement('div');
+  el.className='faq-item';
+  el.innerHTML=`<div class="faq-q" onclick="toggleFaq(${i})">${f.q}<span class="faq-arr">▾</span></div><div class="faq-a">${f.a}</div>`;
+  fl.appendChild(el);
+});
+function toggleFaq(i){
+  document.querySelectorAll('.faq-item')[i].classList.toggle('open');
+}
+
+/* WHATSAPP ORDER */
+function waOrder(p){
+  window.open(`https://wa.me/919000000000?text=Hi!%20I'd%20like%20to%20order:%20${encodeURIComponent(p)}`,'_blank');
+}
+
+/* SCROLL REVEAL */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
+</script>
+</body>
+</html>

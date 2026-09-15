@@ -49,7 +49,12 @@ public class CorsConfig {
                 "https://fzromue-abhishek240517-8081.exp.direct",
                 "https://realtysync-connect-03383.vercel.app",
                 "https://preview--courier-board.lovable.app",
-                "https://preview--bright-admin-dash.lovable.app"
+                "https://preview--bright-admin-dash.lovable.app",
+                "https://f0a6-106-219-1-206.ngrok-free.app",
+                "https://*.ngrok-free.app",
+                "https://safarcarry.com",        // 👈 ADD THIS
+                "https://www.safarcarry.com"    // 👈 ADD THIS TOO
+
                 // 👈 Add this line
         ));
 

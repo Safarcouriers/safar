@@ -1,5 +1,4 @@
 package com.saffaricarrers.saffaricarrers.Services;
-
 import com.saffaricarrers.saffaricarrers.Dtos.*;
 import com.saffaricarrers.saffaricarrers.Entity.*;
 import com.saffaricarrers.saffaricarrers.Entity.Package;
@@ -16,20 +15,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
 public class DeliveryRequestService {
-
     private final DeliveryRequestRepository deliveryRequestRepository;
     private final PackageRepository packageRepository;
     private final CarrierRouteRepository carrierRouteRepository;
@@ -39,19 +35,16 @@ public class DeliveryRequestService {
     private final CarrierRouteService carrierRouteService;
     private final PaymentService paymentService;
     private final CallBackService callBackService;
-
+    private Map<String, Double> packageCoords;
+    private Map<String, Double> dropCoords;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
     // =====================================================================
     // MY PACKAGES TAB
     // =====================================================================
-
     public List<MyPackageResponse> getMyPackages(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         List<Package> packages = packageRepository.findBySenderOrderByCreatedAtDesc(user);
-
         return packages.stream().map(pkg -> {
             MyPackageResponse response = new MyPackageResponse();
             response.setPackageId(pkg.getPackageId());
@@ -72,7 +65,6 @@ public class DeliveryRequestService {
                             DeliveryRequest.RequestStatus.IN_TRANSIT,
                             DeliveryRequest.RequestStatus.DELIVERED
                     ));
-
             if (activeRequest.isPresent()) {
                 DeliveryRequest req = activeRequest.get();
                 response.setCarrierName(req.getCarrier().getFullName());
@@ -98,7 +90,6 @@ public class DeliveryRequestService {
 
         List<CarrierRoute> routes = carrierRouteRepository
                 .findByCarrierProfileOrderByCreatedAtDesc(carrierProfile);
-
         return routes.stream().map(route -> {
             MyTripResponse response = new MyTripResponse();
             response.setRouteId(route.getRouteId());
@@ -327,23 +318,89 @@ public class DeliveryRequestService {
             }
 
             // Status Timeline
+            // ================================================================
+// STATUS TIMELINE
+// ================================================================
+
             List<StatusTimelineItem> timeline = new ArrayList<>();
-            timeline.add(new StatusTimelineItem("Created", true, packageEntity.getCreatedAt()));
-            timeline.add(new StatusTimelineItem("Matched",
-                    activeRequest.getStatus() != DeliveryRequest.RequestStatus.ACCEPTED,
-                    activeRequest.getAcceptedAt()));
-            timeline.add(new StatusTimelineItem("Picked Up",
-                    activeRequest.getStatus() == DeliveryRequest.RequestStatus.PICKED_UP
-                            || activeRequest.getStatus() == DeliveryRequest.RequestStatus.IN_TRANSIT
-                            || activeRequest.getStatus() == DeliveryRequest.RequestStatus.DELIVERED,
-                    activeRequest.getPickedUpAt()));
-            timeline.add(new StatusTimelineItem("In Transit",
-                    activeRequest.getStatus() == DeliveryRequest.RequestStatus.IN_TRANSIT
-                            || activeRequest.getStatus() == DeliveryRequest.RequestStatus.DELIVERED,
-                    null));
-            timeline.add(new StatusTimelineItem("Delivered",
-                    activeRequest.getStatus() == DeliveryRequest.RequestStatus.DELIVERED,
-                    activeRequest.getDeliveredAt()));
+
+            DeliveryRequest.RequestStatus currentStatus =
+                    activeRequest.getStatus();
+
+// ---------------------------------------------------------------
+// CREATED
+// ---------------------------------------------------------------
+            timeline.add(
+                    new StatusTimelineItem(
+                            "Created",
+                            true,
+                            packageEntity.getCreatedAt()
+                    )
+            );
+
+// ---------------------------------------------------------------
+// MATCHED
+// ACCEPTED and every status after ACCEPTED means matched happened.
+// ---------------------------------------------------------------
+            boolean matched =
+                    currentStatus == DeliveryRequest.RequestStatus.ACCEPTED
+                            || currentStatus == DeliveryRequest.RequestStatus.PICKED_UP
+                            || currentStatus == DeliveryRequest.RequestStatus.IN_TRANSIT
+                            || currentStatus == DeliveryRequest.RequestStatus.DELIVERED;
+
+            timeline.add(
+                    new StatusTimelineItem(
+                            "Matched",
+                            matched,
+                            activeRequest.getAcceptedAt()
+                    )
+            );
+
+// ---------------------------------------------------------------
+// PICKED UP
+// ---------------------------------------------------------------
+            boolean pickedUp =
+                    currentStatus == DeliveryRequest.RequestStatus.PICKED_UP
+                            || currentStatus == DeliveryRequest.RequestStatus.IN_TRANSIT
+                            || currentStatus == DeliveryRequest.RequestStatus.DELIVERED;
+
+            timeline.add(
+                    new StatusTimelineItem(
+                            "Picked Up",
+                            pickedUp,
+                            activeRequest.getPickedUpAt()
+                    )
+            );
+
+// ---------------------------------------------------------------
+// IN TRANSIT
+// ---------------------------------------------------------------
+            boolean inTransit =
+                    currentStatus == DeliveryRequest.RequestStatus.IN_TRANSIT
+                            || currentStatus == DeliveryRequest.RequestStatus.DELIVERED;
+
+            timeline.add(
+                    new StatusTimelineItem(
+                            "In Transit",
+                            inTransit,
+                            activeRequest.getInTransitAt()
+                    )
+            );
+
+// ---------------------------------------------------------------
+// DELIVERED
+// ---------------------------------------------------------------
+            boolean delivered =
+                    currentStatus == DeliveryRequest.RequestStatus.DELIVERED;
+
+            timeline.add(
+                    new StatusTimelineItem(
+                            "Delivered",
+                            delivered,
+                            activeRequest.getDeliveredAt()
+                    )
+            );
+
             response.setStatusTimeline(timeline);
         }
 
@@ -365,6 +422,12 @@ public class DeliveryRequestService {
 
         CarrierRoute carrierRoute = carrierRouteRepository.findById(carrierRouteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Carrier route not found"));
+
+        // 🚫 Prevent sender from requesting their own route
+        if (packageEntity.getSender().getUserId().equals(
+                carrierRoute.getCarrierProfile().getUser().getUserId())) {
+            throw new IllegalArgumentException("You cannot request delivery on a route you created.");
+        }
 
         Optional<DeliveryRequest> existingRequest = deliveryRequestRepository
                 .findByPackageEntityAndCarrierRouteAndStatusIn(packageEntity, carrierRoute, Arrays.asList(
@@ -394,6 +457,22 @@ public class DeliveryRequestService {
             throw new IllegalArgumentException("Route does not belong to carrier");
         }
 
+        // 🚫 BLOCK carrier from creating/requesting new trips while platform commission is unpaid.
+        // This is enforced in the backend so the rule cannot be bypassed by the app.
+        if (!paymentService.canCarrierStartTrip(carrierUserId)) {
+            log.warn("🚫 Carrier request blocked: {} has pending platform commission", carrierUserId);
+            throw new IllegalStateException(
+                    "You have pending platform commission. " +
+                            "Please pay your commission before requesting new trips."
+            );
+        }
+
+        // 🚫 Prevent carrier from requesting their own package
+        if (carrierRoute.getCarrierProfile().getUser().getUserId()
+                .equals(packageEntity.getSender().getUserId())) {
+            throw new IllegalArgumentException("You cannot send a request for a package you created.");
+        }
+
         Optional<DeliveryRequest> existingRequest = deliveryRequestRepository
                 .findByPackageEntityAndCarrierRouteAndStatusIn(packageEntity, carrierRoute, Arrays.asList(
                         DeliveryRequest.RequestStatus.PENDING,
@@ -409,6 +488,33 @@ public class DeliveryRequestService {
         validateRouteAndDates(packageEntity, carrierRoute);
         return createDeliveryRequest(packageEntity, carrierRoute, carrierNote, "CARRIER_TO_SENDER");
     }
+//    public DeliveryRequestResponse carrierSendRequestToSender(String carrierUserId, Long packageId,
+//                                                              Long carrierRouteId, String carrierNote) {
+//        Package packageEntity = packageRepository.findById(packageId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Package not found"));
+//
+//        CarrierRoute carrierRoute = carrierRouteRepository.findById(carrierRouteId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Carrier route not found"));
+//
+//        if (!carrierRoute.getCarrierProfile().getUser().getUserId().equals(carrierUserId)) {
+//            throw new IllegalArgumentException("Route does not belong to carrier");
+//        }
+//
+//        Optional<DeliveryRequest> existingRequest = deliveryRequestRepository
+//                .findByPackageEntityAndCarrierRouteAndStatusIn(packageEntity, carrierRoute, Arrays.asList(
+//                        DeliveryRequest.RequestStatus.PENDING,
+//                        DeliveryRequest.RequestStatus.ACCEPTED,
+//                        DeliveryRequest.RequestStatus.PICKED_UP,
+//                        DeliveryRequest.RequestStatus.IN_TRANSIT
+//                ));
+//
+//        if (existingRequest.isPresent()) {
+//            throw new IllegalStateException("A delivery request already exists for this package and route");
+//        }
+//
+//        validateRouteAndDates(packageEntity, carrierRoute);
+//        return createDeliveryRequest(packageEntity, carrierRoute, carrierNote, "CARRIER_TO_SENDER");
+//    }
 
     public DeliveryRequestResponse senderAcceptRequest(String senderUserId, Long requestId, String senderNote) {
         DeliveryRequest deliveryRequest = deliveryRequestRepository.findById(requestId)
@@ -417,6 +523,10 @@ public class DeliveryRequestService {
         String packageOwnerUserId = deliveryRequest.getPackageEntity().getSender().getUserId();
         if (!packageOwnerUserId.equals(senderUserId)) {
             throw new IllegalArgumentException("Not authorized — package does not belong to this user");
+        }
+
+        if (deliveryRequest.getRequestType() == DeliveryRequest.RequestType.SENDER_TO_CARRIER) {
+            throw new IllegalArgumentException("You cannot accept a request you sent yourself");
         }
 
         if (deliveryRequest.getStatus() != DeliveryRequest.RequestStatus.PENDING) {
@@ -445,6 +555,10 @@ public class DeliveryRequestService {
             throw new IllegalArgumentException("Not authorized");
         }
 
+        if (deliveryRequest.getRequestType() == DeliveryRequest.RequestType.CARRIER_TO_SENDER) {
+            throw new IllegalArgumentException("You cannot accept a request you sent yourself");
+        }
+
         if (deliveryRequest.getStatus() != DeliveryRequest.RequestStatus.PENDING) {
             throw new IllegalArgumentException("Request is not in PENDING state");
         }
@@ -462,7 +576,6 @@ public class DeliveryRequestService {
 
         return acceptRequest(deliveryRequest, carrierNote, "CARRIER");
     }
-
     public DeliveryRequestResponse senderRejectRequest(String senderUserId, Long requestId, String reason) {
         DeliveryRequest deliveryRequest = deliveryRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Delivery request not found"));
@@ -577,28 +690,58 @@ public class DeliveryRequestService {
     }
 
     public DeliveryRequestResponse startTransit(String carrierUserId, Long requestId) {
+
         DeliveryRequest deliveryRequest = deliveryRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Delivery request not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Delivery request not found"));
 
         if (!deliveryRequest.getCarrier().getUserId().equals(carrierUserId)) {
             throw new IllegalArgumentException("Only carrier can start transit");
         }
 
         if (deliveryRequest.getStatus() != DeliveryRequest.RequestStatus.PICKED_UP) {
-            throw new IllegalArgumentException("Package must be in PICKED_UP status to start transit");
+            throw new IllegalArgumentException(
+                    "Package must be in PICKED_UP status to start transit"
+            );
         }
 
-        deliveryRequest.setStatus(DeliveryRequest.RequestStatus.IN_TRANSIT);
-        DeliveryRequest saved = deliveryRequestRepository.save(deliveryRequest);
+        // ---------------------------------------------------------------
+        // IMPORTANT:
+        // Store the exact time at which transit started.
+        // ---------------------------------------------------------------
+        LocalDateTime transitStartedAt = LocalDateTime.now();
 
+        deliveryRequest.setStatus(
+                DeliveryRequest.RequestStatus.IN_TRANSIT
+        );
+
+        deliveryRequest.setInTransitAt(transitStartedAt);
+
+        DeliveryRequest saved =
+                deliveryRequestRepository.save(deliveryRequest);
+
+        // ---------------------------------------------------------------
+        // Update package status
+        // ---------------------------------------------------------------
         Package pkg = deliveryRequest.getPackageEntity();
+
         pkg.setStatus(Package.PackageStatus.IN_TRANSIT);
+
         packageRepository.save(pkg);
 
+        // ---------------------------------------------------------------
+        // Update route status
+        // ---------------------------------------------------------------
         CarrierRoute route = deliveryRequest.getCarrierRoute();
-        updateRouteStatusToHighestLevel(route, CarrierRoute.RouteStatus.IN_TRANSIT);
 
-        // ✅ Notify sender that package is in transit
+        updateRouteStatusToHighestLevel(
+                route,
+                CarrierRoute.RouteStatus.IN_TRANSIT
+        );
+
+        // ---------------------------------------------------------------
+        // Notify sender
+        // ---------------------------------------------------------------
         createNotification(
                 deliveryRequest.getSender(),
                 "Package In Transit 🚚",
@@ -610,7 +753,6 @@ public class DeliveryRequestService {
 
         return mapToDeliveryRequestResponse(saved);
     }
-
     public DeliveryRequestResponse verifyDeliveryOtp(String carrierUserId, Long requestId, String otp) {
         DeliveryRequest deliveryRequest = deliveryRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Delivery request not found"));
@@ -641,42 +783,40 @@ public class DeliveryRequestService {
                 && existingPayment.getPaymentMethod() == Payment.PaymentMethod.ONLINE
                 && existingPayment.getPaymentStatus() == Payment.PaymentStatus.PENDING) {
 
-            // Sender opened Razorpay and paid but network dropped —
-            // callback never reached us so payment is stuck PENDING.
-            // Verify with Razorpay directly before deciding COD vs Online.
-            log.warn("⚠️ Stuck PENDING online payment for request: {}. Verifying with Razorpay...", requestId);
+            // ── QR payment (created by createQrPayment) has qrId but NO razorpayOrderId.
+            // If it's still PENDING here, rider skipped the QR ("Skip - cash").
+            // Treat as COD — do NOT call orders.fetch() which would NPE on null orderId.
+            if (existingPayment.getQrId() != null) {
+                log.info("ℹ️ Pending QR payment at delivery OTP — rider skipped QR. Recording as COD for request: {}", requestId);
+                paymentService.handleOfflinePaymentOnDelivery(requestId);
 
-            try {
-                com.razorpay.Order razorpayOrder = paymentService.getRazorpayClient()
-                        .orders.fetch(existingPayment.getRazorpayOrderId());
-                String orderStatus = razorpayOrder.get("status"); // "paid" or "created"
+            } else {
+                // ── Legacy Razorpay order stuck PENDING (non-QR flow) ──
+                // Sender opened Razorpay checkout but network dropped before callback reached us.
+                log.warn("⚠️ Stuck PENDING online order for request: {}. Verifying with Razorpay...", requestId);
+                try {
+                    com.razorpay.Order razorpayOrder = paymentService.getRazorpayClient()
+                            .orders.fetch(existingPayment.getRazorpayOrderId());
+                    String orderStatus = razorpayOrder.get("status"); // "paid" or "created"
 
-                if ("paid".equals(orderStatus)) {
-                    // ✅ Payment DID go through — recover the record
-                    log.info("✅ Razorpay confirms payment was made. Recovering for request: {}", requestId);
-                    existingPayment.setPaymentStatus(Payment.PaymentStatus.COMPLETED);
-                    existingPayment.setPaymentCompletedAt(LocalDateTime.now());
-                    existingPayment.setCommissionPaid(true);
-                    existingPayment.setCarrierTransferStatus(Payment.TransferStatus.PENDING);
-                    existingPayment.setGatewayResponse("Auto-recovered at delivery OTP — Razorpay status: paid");
-                    paymentService.getPaymentRepository().save(existingPayment);
+                    if ("paid".equals(orderStatus)) {
+                        log.info("✅ Razorpay confirms payment was made. Recovering for request: {}", requestId);
+                        existingPayment.setPaymentStatus(Payment.PaymentStatus.COMPLETED);
+                        existingPayment.setPaymentCompletedAt(LocalDateTime.now());
+                        existingPayment.setCommissionPaid(true);
+                        existingPayment.setCarrierTransferStatus(Payment.TransferStatus.PENDING);
+                        existingPayment.setGatewayResponse("Auto-recovered at delivery OTP — Razorpay status: paid");
+                        paymentService.getPaymentRepository().save(existingPayment);
+                        paymentService.triggerCarrierPayoutOnDelivery(requestId);
+                    } else {
+                        log.warn("⚠️ Razorpay order not paid (status: {}). Converting to COD for request: {}", orderStatus, requestId);
+                        paymentService.handleOfflinePaymentOnDelivery(requestId);
+                    }
 
-                    // Trigger payout since online payment is now confirmed
-                    paymentService.triggerCarrierPayoutOnDelivery(requestId);
-
-                } else {
-                    // Razorpay says not paid — sender never actually completed payment
-                    // Convert stuck PENDING row to COD
-                    log.warn("⚠️ Razorpay order not paid (status: {}). Converting to COD for request: {}",
-                            orderStatus, requestId);
+                } catch (Exception e) {
+                    log.error("❌ Razorpay verification failed: {}. Falling back to COD for request: {}", e.getMessage(), requestId);
                     paymentService.handleOfflinePaymentOnDelivery(requestId);
                 }
-
-            } catch (Exception e) {
-                // Can't reach Razorpay — safe fallback is COD
-                log.error("❌ Razorpay verification failed: {}. Falling back to COD for request: {}",
-                        e.getMessage(), requestId);
-                paymentService.handleOfflinePaymentOnDelivery(requestId);
             }
 
         } else if (existingPayment == null
@@ -685,7 +825,7 @@ public class DeliveryRequestService {
             paymentService.handleOfflinePaymentOnDelivery(requestId);
 
         } else {
-            // Online payment already COMPLETED normally — just trigger payout
+            // QR payment or online payment already COMPLETED — just trigger payout
             paymentService.triggerCarrierPayoutOnDelivery(requestId);
         }
 
@@ -708,8 +848,7 @@ public class DeliveryRequestService {
         );
 
         return mapToDeliveryRequestResponse(saved);
-    }
-    // =====================================================================
+    }    // =====================================================================
     // DELIVERY PROGRESS STATUS
     // =====================================================================
 
@@ -772,7 +911,30 @@ public class DeliveryRequestService {
         addressDetails.setPickupAddress(deliveryRequest.getPackageEntity().getFromAddress());
         addressDetails.setDeliveryAddress(deliveryRequest.getPackageEntity().getToAddress());
         response.setAddressDetails(addressDetails);
+        Package riderPkg = deliveryRequest.getPackageEntity();
 
+        // ✅ Use try/catch because getLatitude() is primitive double — cannot be null
+        try {
+            double pkgLat = riderPkg.getLatitude();
+            double pkgLng = riderPkg.getLongitude();
+            if (pkgLat != 0.0 || pkgLng != 0.0) {
+                Map<String, Double> pkgCoords = new HashMap<>();
+                pkgCoords.put("latitude",  pkgLat);
+                pkgCoords.put("longitude", pkgLng);
+                response.setPackageCoords(pkgCoords);
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            double toLatitude  = riderPkg.getToLatitude();
+            double toLongitude = riderPkg.getToLongitude();
+            if (toLatitude != 0.0 || toLongitude != 0.0) {
+                Map<String, Double> dropCoordsMap = new HashMap<>();
+                dropCoordsMap.put("latitude",  toLatitude);
+                dropCoordsMap.put("longitude", toLongitude);
+                response.setDropCoords(dropCoordsMap);
+            }
+        } catch (Exception ignored) {}
         DocumentsProgressResponse docsProgress = new DocumentsProgressResponse();
         docsProgress.setPickupPhotoUploaded(
                 deliveryRequest.getPickupPhoto() != null && !deliveryRequest.getPickupPhoto().isEmpty());
@@ -846,7 +1008,10 @@ public class DeliveryRequestService {
     // =====================================================================
     // ALL PENDING REQUESTS TAB
     // =====================================================================
-
+    private DeliveryRequest.RequestType resolveRequestType(DeliveryRequest req) {
+        // Defensive default for any legacy/missing rows so they never silently vanish
+        return req.getRequestType() != null ? req.getRequestType() : DeliveryRequest.RequestType.SENDER_TO_CARRIER;
+    }
     public RequestsTabResponse getAllPendingRequests(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -855,13 +1020,35 @@ public class DeliveryRequestService {
 
         List<DeliveryRequest> pendingAsCarrier = deliveryRequestRepository
                 .findByCarrierAndStatusOrderByCreatedAtDesc(user, DeliveryRequest.RequestStatus.PENDING);
-        response.setRequestsReceivedFromSenders(pendingAsCarrier.stream()
-                .map(this::mapToRequestSummary).collect(Collectors.toList()));
+
+        List<RequestSummary> receivedFromSenders = pendingAsCarrier.stream()
+                .filter(r -> resolveRequestType(r) == DeliveryRequest.RequestType.SENDER_TO_CARRIER)
+                .map(this::mapToRequestSummary)
+                .collect(Collectors.toList());
+
+        List<RequestSummary> sentByMeAsCarrier = pendingAsCarrier.stream()
+                .filter(r -> resolveRequestType(r) == DeliveryRequest.RequestType.CARRIER_TO_SENDER)
+                .map(this::mapToRequestSummary)
+                .collect(Collectors.toList());
+
+        response.setRequestsReceivedFromSenders(receivedFromSenders);
+        response.setRequestsSentByMeAsCarrier(sentByMeAsCarrier);
 
         List<DeliveryRequest> pendingAsSender = deliveryRequestRepository
                 .findBySenderAndStatusOrderByCreatedAtDesc(user, DeliveryRequest.RequestStatus.PENDING);
-        response.setRequestsReceivedFromCarriers(pendingAsSender.stream()
-                .map(this::mapToRequestSummary).collect(Collectors.toList()));
+
+        List<RequestSummary> receivedFromCarriers = pendingAsSender.stream()
+                .filter(r -> resolveRequestType(r) == DeliveryRequest.RequestType.CARRIER_TO_SENDER)
+                .map(this::mapToRequestSummary)
+                .collect(Collectors.toList());
+
+        List<RequestSummary> sentByMeAsSender = pendingAsSender.stream()
+                .filter(r -> resolveRequestType(r) == DeliveryRequest.RequestType.SENDER_TO_CARRIER)
+                .map(this::mapToRequestSummary)
+                .collect(Collectors.toList());
+
+        response.setRequestsReceivedFromCarriers(receivedFromCarriers);
+        response.setRequestsSentByMeAsSender(sentByMeAsSender);
 
         List<DeliveryRequest> activeAsCarrier = deliveryRequestRepository
                 .findByCarrierAndStatusInOrderByCreatedAtDesc(user, Arrays.asList(
@@ -881,13 +1068,11 @@ public class DeliveryRequestService {
         response.setActiveRequestsAsSender(activeAsSender.stream()
                 .map(this::mapToRequestSummary).collect(Collectors.toList()));
 
-        response.setTotalPendingCount(pendingAsCarrier.size() + pendingAsSender.size());
+        response.setTotalPendingCount(receivedFromSenders.size() + receivedFromCarriers.size());
         response.setTotalActiveCount(activeAsCarrier.size() + activeAsSender.size());
 
         return response;
-    }
-
-    // =====================================================================
+    }    // =====================================================================
     // MATCHING (Home page)
     // =====================================================================
 
@@ -1191,7 +1376,6 @@ public class DeliveryRequestService {
     private DeliveryRequestResponse createDeliveryRequest(Package packageEntity, CarrierRoute carrierRoute,
                                                           String note, String requestType) {
         Double totalAmount = calculateDeliveryAmount(packageEntity, carrierRoute);
-        // ✅ Use consistent 15% commission rate
         Double platformCommission = totalAmount * 0.15;
         Double carrierEarning = totalAmount - platformCommission;
 
@@ -1207,6 +1391,7 @@ public class DeliveryRequestService {
         deliveryRequest.setPickupOtp(packageEntity.getPickupOtp());
         deliveryRequest.setDeliveryOtp(packageEntity.getDeliveryOtp());
         deliveryRequest.setRequestedAt(LocalDateTime.now());
+        deliveryRequest.setRequestType(DeliveryRequest.RequestType.valueOf(requestType)); // ✅ NEW — persist who initiated
 
         if (requestType.equals("SENDER_TO_CARRIER")) {
             deliveryRequest.setSenderNote(note);
@@ -1231,10 +1416,15 @@ public class DeliveryRequestService {
 
         return mapToDeliveryRequestResponse(saved);
     }
+    private DeliveryRequestResponse acceptRequest(
+            DeliveryRequest deliveryRequest,
+            String note,
+            String acceptedBy) {
 
-    private DeliveryRequestResponse acceptRequest(DeliveryRequest deliveryRequest, String note, String acceptedBy) {
+        LocalDateTime now = LocalDateTime.now();
+
         deliveryRequest.setStatus(DeliveryRequest.RequestStatus.ACCEPTED);
-        deliveryRequest.setAcceptedAt(LocalDateTime.now());
+        deliveryRequest.setAcceptedAt(now);
 
         if (acceptedBy.equals("CARRIER")) {
             deliveryRequest.setCarrierNote(note);
@@ -1249,27 +1439,14 @@ public class DeliveryRequestService {
         packageRepository.save(packageEntity);
 
         CarrierRoute carrierRoute = deliveryRequest.getCarrierRoute();
-        if (carrierRoute.getRouteStatus() == CarrierRoute.RouteStatus.CREATED
-                || carrierRoute.getRouteStatus() == CarrierRoute.RouteStatus.REQUEST_SENT) {
+
+        if (carrierRoute.getRouteStatus() == CarrierRoute.RouteStatus.CREATED) {
             carrierRoute.setRouteStatus(CarrierRoute.RouteStatus.MATCHED);
             carrierRouteRepository.save(carrierRoute);
         }
 
-        Double packageWeight = calculatePackageWeight(packageEntity);
-        carrierRouteService.updateRouteCapacity(deliveryRequest.getCarrierRoute().getRouteId(), packageWeight, 1);
-
-        User recipient = acceptedBy.equals("CARRIER") ? deliveryRequest.getSender() : deliveryRequest.getCarrier();
-        Long referenceId = acceptedBy.equals("CARRIER")
-                ? saved.getPackageEntity().getPackageId()
-                : saved.getCarrierRoute().getRouteId();
-        String recipientRole = acceptedBy.equals("CARRIER") ? "SENDER" : "CARRIER";
-
-        createNotification(recipient, "Request Accepted ✅", "Your delivery request has been accepted.",
-                Notification.NotificationType.REQUEST_ACCEPTED, referenceId, recipientRole);
-
         return mapToDeliveryRequestResponse(saved);
     }
-
     private DeliveryRequestResponse rejectRequest(DeliveryRequest deliveryRequest, String reason, String rejectedBy) {
         deliveryRequest.setStatus(DeliveryRequest.RequestStatus.REJECTED);
 
@@ -1309,26 +1486,27 @@ public class DeliveryRequestService {
     }
 
     private Double calculateDeliveryAmount(Package packageEntity, CarrierRoute carrierRoute) {
+
+        log.info("🧾 CALCULATING DELIVERY AMOUNT");
+
+        // 🔥 PRIORITY 1: USER PRICE
+        if (packageEntity.getTripCharge() != null && packageEntity.getTripCharge() > 0) {
+            log.info("✅ Using PACKAGE price: {}", packageEntity.getTripCharge());
+            return packageEntity.getTripCharge();
+        }
+
+        // 🔁 FALLBACK: ROUTE PRICE
         List<RoutePricing> pricingList = carrierRoute.getRoutePricing();
 
-        RoutePricing applicablePricing = pricingList.stream()
-                // .filter(p -> p.getProductType() == packageEntity.getProductType()) // ✅ commented — use any available pricing
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "No pricing configured for this route"
-                ));
-        if (carrierRoute.getTransportType() == CarrierRoute.TransportType.COMMERCIAL) {
-            Double weightInTons = calculatePackageWeight(packageEntity) / 1000.0;
-            return applicablePricing.getPricePerTon() * weightInTons;
-        } else {
-            Double packageWeight = calculatePackageWeight(packageEntity);
-            if (packageWeight > applicablePricing.getWeightLimit()) {
-                throw new IllegalArgumentException("Package weight exceeds route limit");
-            }
-            return applicablePricing.getFixedPrice();
+        if (pricingList != null && !pricingList.isEmpty()) {
+            Double price = pricingList.get(0).getFixedPrice();
+            log.info("⚠️ Using ROUTE price: {}", price);
+            return price;
         }
-    }
 
+        log.info("⚠️ No price found → default 0");
+        return 0.0;
+    }
     // =====================================================================
     // ROUTE STATUS HELPERS
     // =====================================================================
@@ -1507,6 +1685,8 @@ public class DeliveryRequestService {
         summary.setRequestedAt(req.getRequestedAt());
         summary.setSenderNote(req.getSenderNote());
         summary.setCarrierNote(req.getCarrierNote());
+        summary.setPickUpDate(req.getPackageEntity().getPickUpDate());
+        summary.setDropDate(req.getPackageEntity().getDropDate());
         return summary;
     }
 
@@ -1711,6 +1891,9 @@ public class DeliveryRequestService {
         private String senderNote;
         private String carrierNote;
         private NextActionResponse nextAction;
+        private Map<String, Double> packageCoords;
+        private Map<String, Double> dropCoords;
+
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor
@@ -1819,5 +2002,122 @@ public class DeliveryRequestService {
         double x = Math.cos(lat1Rad) * Math.sin(lat2Rad)
                 - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
         return (Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
+    }
+    /**
+     * ================================================================
+     * RIDER PAYMENT FLOW — DELIVERY OTP
+     * ================================================================
+     *
+     * This is intentionally separate from verifyDeliveryOtp().
+     *
+     * Existing verifyDeliveryOtp() performs payment/COD handling and is
+     * used by other flows.
+     *
+     * This method ONLY:
+     *   1. Validates carrier
+     *   2. Validates delivery photo
+     *   3. Validates delivery OTP
+     *   4. Marks delivery DELIVERED
+     *   5. Marks package DELIVERED
+     *   6. Updates route
+     *
+     * It DOES NOT:
+     *   - create COD payment
+     *   - convert pending QR to COD
+     *   - trigger carrier payout
+     *
+     * Payment is completed separately by the rider payment screen.
+     */
+    @Transactional
+    public DeliveryRequestResponse verifyDeliveryOtpForPayment(
+            String carrierUserId,
+            Long requestId,
+            String otp) {
+
+        DeliveryRequest deliveryRequest = deliveryRequestRepository.findById(requestId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Delivery request not found"));
+
+        // ---------------------------------------------------------------
+        // 1. SECURITY — make sure this request belongs to this rider
+        // ---------------------------------------------------------------
+        if (!deliveryRequest.getCarrier().getUserId().equals(carrierUserId)) {
+            throw new IllegalArgumentException(
+                    "Only the assigned carrier can verify delivery OTP"
+            );
+        }
+
+        // ---------------------------------------------------------------
+        // 2. Must have delivery photo
+        // ---------------------------------------------------------------
+        if (deliveryRequest.getDeliveryPhoto() == null
+                || deliveryRequest.getDeliveryPhoto().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Please upload delivery photo before entering delivery OTP"
+            );
+        }
+
+        // ---------------------------------------------------------------
+        // 3. Must currently be IN_TRANSIT
+        // ---------------------------------------------------------------
+        if (deliveryRequest.getStatus()
+                != DeliveryRequest.RequestStatus.IN_TRANSIT) {
+
+            throw new IllegalStateException(
+                    "Delivery OTP can only be verified while package is in transit"
+            );
+        }
+
+        // ---------------------------------------------------------------
+        // 4. Verify OTP
+        // ---------------------------------------------------------------
+        if (deliveryRequest.getDeliveryOtp() == null
+                || !deliveryRequest.getDeliveryOtp().equals(otp)) {
+
+            throw new IllegalArgumentException("Invalid delivery OTP");
+        }
+
+        // ---------------------------------------------------------------
+        // 5. Mark delivery as DELIVERED
+        // ---------------------------------------------------------------
+        deliveryRequest.setStatus(
+                DeliveryRequest.RequestStatus.DELIVERED
+        );
+
+        deliveryRequest.setDeliveredAt(LocalDateTime.now());
+
+        DeliveryRequest saved =
+                deliveryRequestRepository.save(deliveryRequest);
+
+        // ---------------------------------------------------------------
+        // 6. Mark package as DELIVERED
+        // ---------------------------------------------------------------
+        Package pkg = deliveryRequest.getPackageEntity();
+
+        pkg.setStatus(Package.PackageStatus.DELIVERED);
+
+        packageRepository.save(pkg);
+
+        // ---------------------------------------------------------------
+        // 7. Update route status
+        // ---------------------------------------------------------------
+        CarrierRoute route = deliveryRequest.getCarrierRoute();
+
+        updateRouteStatusBasedOnAllPackages(route);
+
+        log.info(
+                "✅ Delivery OTP verified for payment flow | requestId={} | carrier={}",
+                requestId,
+                carrierUserId
+        );
+
+        // IMPORTANT:
+        // NO paymentService.handleOfflinePaymentOnDelivery()
+        // NO paymentService.triggerCarrierPayoutOnDelivery()
+        //
+        // Payment happens AFTER this method returns successfully.
+
+        return mapToDeliveryRequestResponse(saved);
     }
 }

@@ -33,6 +33,7 @@ public class PackageService {
     private final InsuranceRepository insuranceRepository;
     private final CallBackService callBackService;
     private final RiderNotificationService riderNotificationService; // ✅ NEW
+    private final RiderService riderService;
 
     // ==================== CREATE PACKAGE ====================
 
@@ -119,7 +120,7 @@ public class PackageService {
                     request.getLatitude(), request.getLongitude(),
                     request.getToLatitude(), request.getToLongitude());
             Package savedPackage = packageRepository.save(packageEntity);
-
+            riderService.invalidateNearbyCache(savedPackage.getSender().getUserId());
             if (savedPackage.getInsurance()) {
                 createInsuranceForPackage(savedPackage);
             }
@@ -139,134 +140,399 @@ public class PackageService {
 
     // ==================== UPDATE PACKAGE ====================
 
-    @CacheEvict(value = {"senderPackages", "packageById", "packageStats", "geospatialPackages"}, allEntries = true)
-    public PackageResponse updatePackage(String userId, Long packageId, PackageRequest request,
-                                         List<MultipartFile> productImages,
-                                         MultipartFile invoiceImage) {
+    // ==================== UPDATE PACKAGE ====================
 
-        log.info("Starting package update for packageId: {} by userId: {}", packageId, userId);
+    @CacheEvict(
+            value = {"senderPackages", "packageById", "packageStats", "geospatialPackages"},
+            allEntries = true
+    )
+    public PackageResponse updatePackage(
+            String userId,
+            Long packageId,
+            PackageRequest request,
+            List<MultipartFile> productImages,
+            MultipartFile invoiceImage) {
+
+        log.info(
+                "Starting package update for packageId: {} by userId: {}",
+                packageId,
+                userId
+        );
 
         Package packageEntity = packageRepository.findById(packageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Package not found"));
 
+        // Make sure the package belongs to the sender
         if (!packageEntity.getSender().getUserId().equals(userId)) {
             throw new IllegalArgumentException("Package does not belong to sender");
         }
 
+        // Do not allow editing after a request has been sent
         if (packageEntity.getStatus() != Package.PackageStatus.CREATED) {
-            throw new IllegalArgumentException("Cannot update package once requests are sent");
+            throw new IllegalArgumentException(
+                    "Cannot update package once requests are sent"
+            );
         }
 
         try {
+
+            // ============================================================
+            // PRODUCT IMAGES
+            // ============================================================
+
             List<String> productImageUrls = new ArrayList<>();
 
             if (productImages == null || productImages.isEmpty()) {
-                log.info("No new product images provided, keeping existing images");
-                productImageUrls = packageEntity.getProductImages();
-            } else {
-                log.info("Processing {} new product images", productImages.size());
 
-                if (packageEntity.getProductImages() != null && !packageEntity.getProductImages().isEmpty()) {
+                // Keep existing images when no new images are uploaded
+                if (packageEntity.getProductImages() != null) {
+                    productImageUrls.addAll(packageEntity.getProductImages());
+                }
+
+            } else {
+
+                // Delete old product images
+                if (packageEntity.getProductImages() != null
+                        && !packageEntity.getProductImages().isEmpty()) {
+
                     for (String oldImageUrl : packageEntity.getProductImages()) {
                         try {
                             callBackService.deleteFromS3(oldImageUrl);
-                            log.info("Deleted old product image: {}", oldImageUrl);
+                            log.info(
+                                    "Deleted old product image: {}",
+                                    oldImageUrl
+                            );
                         } catch (Exception e) {
-                            log.warn("Failed to delete old product image: {}", oldImageUrl);
+                            log.warn(
+                                    "Failed to delete old product image: {}",
+                                    oldImageUrl
+                            );
                         }
                     }
                 }
 
+                // Upload new product images
                 for (MultipartFile image : productImages) {
+
                     if (image != null && !image.isEmpty()) {
+
                         String imageUrl = callBackService.uploadToS3(
                                 image.getInputStream(),
                                 image.getContentType(),
                                 image.getSize()
                         );
+
                         productImageUrls.add(imageUrl);
-                        log.info("Uploaded new product image: {}", imageUrl);
+
+                        log.info(
+                                "Uploaded new product image: {}",
+                                imageUrl
+                        );
                     }
                 }
             }
 
-            String invoiceImageUrl = packageEntity.getProductInvoiceImage();
+
+            // ============================================================
+            // INVOICE IMAGE
+            // ============================================================
+
+            String invoiceImageUrl =
+                    packageEntity.getProductInvoiceImage();
+
             if (invoiceImage != null && !invoiceImage.isEmpty()) {
+
                 log.info("Processing new invoice image");
 
+                // Delete old invoice image
                 if (packageEntity.getProductInvoiceImage() != null) {
+
                     try {
-                        callBackService.deleteFromS3(packageEntity.getProductInvoiceImage());
+                        callBackService.deleteFromS3(
+                                packageEntity.getProductInvoiceImage()
+                        );
+
                         log.info("Deleted old invoice image");
+
                     } catch (Exception e) {
-                        log.warn("Failed to delete old invoice image: {}", packageEntity.getProductInvoiceImage());
+
+                        log.warn(
+                                "Failed to delete old invoice image: {}",
+                                packageEntity.getProductInvoiceImage()
+                        );
                     }
                 }
 
-                invoiceImageUrl = callBackService.uploadDocumentToS3(invoiceImage, "invoice");
-                log.info("Uploaded new invoice image: {}", invoiceImageUrl);
+                // Upload new invoice
+                invoiceImageUrl =
+                        callBackService.uploadDocumentToS3(
+                                invoiceImage,
+                                "invoice"
+                        );
+
+                log.info(
+                        "Uploaded new invoice image: {}",
+                        invoiceImageUrl
+                );
             }
 
-            packageEntity.setProductName(request.getProductName());
-            packageEntity.setProductDescription(request.getProductDescription());
-            packageEntity.setProductValue(request.getProductValue());
-            packageEntity.setProductType(request.getProductType());
-            packageEntity.setTransportType(request.getTransportType());
-            packageEntity.setWeight(request.getWeight());
-            packageEntity.setLength(request.getLength());
-            packageEntity.setWidth(request.getWidth());
-            packageEntity.setHeight(request.getHeight());
-            packageEntity.setProductImages(productImageUrls);
-            packageEntity.setProductInvoiceImage(invoiceImageUrl);
-            packageEntity.setFromAddress(request.getFromAddress());
-            packageEntity.setToAddress(request.getToAddress());
-            packageEntity.setLatitude(request.getLatitude());
-            packageEntity.setLongitude(request.getLongitude());
-            packageEntity.setToLatitude(request.getToLatitude());   // ← ADD
-            packageEntity.setToLongitude(request.getToLongitude()); // ← ADD
-            log.info("📦 Package coords updated — FROM: ({}, {}) TO: ({}, {})",
-                    request.getLatitude(), request.getLongitude(),
-                    request.getToLatitude(), request.getToLongitude());
-            packageEntity.setPickUpDate(request.getPickUpDate());
-            packageEntity.setDropDate(request.getDropDate());
-            packageEntity.setTripCharge(request.getTripCharge());
-            packageEntity.setPricePerKg(request.getPricePerKg());
-            packageEntity.setPricePerTon(request.getPricePerTon());
 
-            boolean wasInsured = packageEntity.getInsurance();
-            boolean nowInsured = request.getInsurance() != null ? request.getInsurance() : false;
-            packageEntity.setInsurance(nowInsured);
+            // ============================================================
+            // BASIC PACKAGE DETAILS
+            // ============================================================
 
+            packageEntity.setProductName(
+                    request.getProductName()
+            );
+
+            packageEntity.setProductDescription(
+                    request.getProductDescription()
+            );
+
+            packageEntity.setProductValue(
+                    request.getProductValue()
+            );
+
+            packageEntity.setProductType(
+                    request.getProductType()
+            );
+
+            packageEntity.setTransportType(
+                    request.getTransportType()
+            );
+
+            packageEntity.setWeight(
+                    request.getWeight()
+            );
+
+            packageEntity.setLength(
+                    request.getLength()
+            );
+
+            packageEntity.setWidth(
+                    request.getWidth()
+            );
+
+            packageEntity.setHeight(
+                    request.getHeight()
+            );
+
+
+            // ============================================================
+            // IMAGES
+            // ============================================================
+
+            packageEntity.setProductImages(
+                    productImageUrls
+            );
+
+            packageEntity.setProductInvoiceImage(
+                    invoiceImageUrl
+            );
+
+
+            // ============================================================
+            // LOCATIONS
+            // ============================================================
+
+            packageEntity.setFromAddress(
+                    request.getFromAddress()
+            );
+
+            packageEntity.setToAddress(
+                    request.getToAddress()
+            );
+
+            packageEntity.setLatitude(
+                    request.getLatitude()
+            );
+
+            packageEntity.setLongitude(
+                    request.getLongitude()
+            );
+
+            packageEntity.setToLatitude(
+                    request.getToLatitude()
+            );
+
+            packageEntity.setToLongitude(
+                    request.getToLongitude()
+            );
+
+            log.info(
+                    "📦 Package coords updated — FROM: ({}, {}) TO: ({}, {})",
+                    request.getLatitude(),
+                    request.getLongitude(),
+                    request.getToLatitude(),
+                    request.getToLongitude()
+            );
+
+
+            // ============================================================
+            // DATES
+            // ============================================================
+
+            packageEntity.setPickUpDate(
+                    request.getPickUpDate()
+            );
+
+            packageEntity.setDropDate(
+                    request.getDropDate()
+            );
+
+
+            // ============================================================
+            // ⭐ IMPORTANT — UPDATE TIMES
+            // ============================================================
+
+            packageEntity.setAvailableTime(
+                    request.getAvailableTime()
+            );
+
+            packageEntity.setDeadlineTime(
+                    request.getDeadlineTime()
+            );
+
+            log.info(
+                    "⏰ Package times updated — Available: {} | Deadline: {}",
+                    request.getAvailableTime(),
+                    request.getDeadlineTime()
+            );
+
+
+            // ============================================================
+            // PRICING
+            // ============================================================
+
+            packageEntity.setTripCharge(
+                    request.getTripCharge()
+            );
+
+            packageEntity.setPricePerKg(
+                    request.getPricePerKg()
+            );
+
+            packageEntity.setPricePerTon(
+                    request.getPricePerTon()
+            );
+
+
+            // ============================================================
+            // INSURANCE
+            // ============================================================
+
+            boolean wasInsured =
+                    packageEntity.getInsurance();
+
+            boolean nowInsured =
+                    request.getInsurance() != null
+                            ? request.getInsurance()
+                            : false;
+
+            packageEntity.setInsurance(
+                    nowInsured
+            );
+
+
+            // If insurance was added
             if (!wasInsured && nowInsured) {
-                log.info("Adding insurance to package");
-                createInsuranceForPackage(packageEntity);
-            } else if (wasInsured && !nowInsured) {
-                log.info("Removing insurance from package");
-                removeInsuranceForPackage(packageEntity);
+
+                log.info(
+                        "Adding insurance to package"
+                );
+
+                createInsuranceForPackage(
+                        packageEntity
+                );
+
             }
 
-            Package updatedPackage = packageRepository.save(packageEntity);
-            log.info("Package saved successfully: {}", updatedPackage.getPackageId());
+            // If insurance was removed
+            else if (wasInsured && !nowInsured) {
+
+                log.info(
+                        "Removing insurance from package"
+                );
+
+                removeInsuranceForPackage(
+                        packageEntity
+                );
+            }
+
+
+            // ============================================================
+            // SAVE
+            // ============================================================
+
+            Package updatedPackage =
+                    packageRepository.save(packageEntity);
+
+            log.info(
+                    "Package saved successfully: {}",
+                    updatedPackage.getPackageId()
+            );
+
+
+            // ============================================================
+            // RESPONSE
+            // ============================================================
 
             try {
-                log.info("Mapping package to response...");
-                PackageResponse response = mapToPackageResponse(updatedPackage);
-                log.info("Response mapped successfully");
+
+                log.info(
+                        "Mapping package to response..."
+                );
+
+                PackageResponse response =
+                        mapToPackageResponse(
+                                updatedPackage
+                        );
+
+                log.info(
+                        "Response mapped successfully"
+                );
+
                 return response;
+
             } catch (Exception mappingError) {
-                log.error("RESPONSE MAPPING ERROR: {}", mappingError.getMessage(), mappingError);
-                return createMinimalResponse(updatedPackage);
+
+                log.error(
+                        "RESPONSE MAPPING ERROR: {}",
+                        mappingError.getMessage(),
+                        mappingError
+                );
+
+                return createMinimalResponse(
+                        updatedPackage
+                );
             }
 
+
         } catch (IOException e) {
-            log.error("Error uploading images during package update: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to upload images: " + e.getMessage());
+
+            log.error(
+                    "Error uploading images during package update: {}",
+                    e.getMessage(),
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Failed to upload images: " + e.getMessage()
+            );
+
         } catch (Exception e) {
-            log.error("Unexpected error during package update: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to update package: " + e.getMessage());
+
+            log.error(
+                    "Unexpected error during package update: {}",
+                    e.getMessage(),
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Failed to update package: " + e.getMessage()
+            );
         }
     }
-
     private PackageResponse createMinimalResponse(Package pkg) {
         log.info("Creating minimal response for package: {}", pkg.getPackageId());
         PackageResponse response = new PackageResponse();
@@ -897,18 +1163,18 @@ public class PackageService {
                 .collect(Collectors.toList());
     }
 
-    private List<GeospatialPackageResponse> findOnTheWayPackages(GeospatialSearchRequest request) {
-        List<Long> packageIds = packageRepository.findPackageIdsAlongRouteSimplified(
-                request.getFromLatitude(), request.getFromLongitude(),
-                request.getToLatitude(), request.getToLongitude(), request.getCorridorWidthKm());
-        if (packageIds.isEmpty()) return Collections.emptyList();
-        List<Package> packages = packageRepository.findByIdInWithSender(packageIds);
-        return packages.stream()
-                .filter(pkg -> applyFilters(pkg, request))
-                .limit(request.getMaxResultsPerCategory())
-                .map(pkg -> { GeospatialPackageResponse r = mapToGeospatialResponse(pkg, request.getFromLatitude(), request.getFromLongitude()); r.setDistanceCategory("ON_THE_WAY"); r.setIsOnRoute(true); return r; })
-                .collect(Collectors.toList());
-    }
+//    private List<GeospatialPackageResponse> findOnTheWayPackages(GeospatialSearchRequest request) {
+//        List<Long> packageIds = packageRepository.findPackageIdsAlongRouteSimplified(
+//                request.getFromLatitude(), request.getFromLongitude(),
+//                request.getToLatitude(), request.getToLongitude(), request.getCorridorWidthKm());
+//        if (packageIds.isEmpty()) return Collections.emptyList();
+//        List<Package> packages = packageRepository.findByIdInWithSender(packageIds);
+//        return packages.stream()
+//                .filter(pkg -> applyFilters(pkg, request))
+//                .limit(request.getMaxResultsPerCategory())
+//                .map(pkg -> { GeospatialPackageResponse r = mapToGeospatialResponse(pkg, request.getFromLatitude(), request.getFromLongitude()); r.setDistanceCategory("ON_THE_WAY"); r.setIsOnRoute(true); return r; })
+//                .collect(Collectors.toList());
+//    }
 
     private List<GeospatialPackageResponse> findPackagesNearPoint(
             double latitude, double longitude, double radiusKm,
@@ -925,8 +1191,9 @@ public class PackageService {
 
     private List<GeospatialPackageResponse> findPackagesInRouteCorridor(RouteSearchRequest request) {
         List<Long> packageIds = packageRepository.findPackageIdsAlongRouteSimplified(
-                request.getFromLatitude(), request.getFromLongitude(),
-                request.getToLatitude(), request.getToLongitude(), request.getCorridorWidthKm());
+                request.getFromLatitude(),
+                request.getFromLongitude(),
+                request.getCorridorWidthKm());
         if (packageIds.isEmpty()) return Collections.emptyList();
         List<Package> packages = packageRepository.findByIdInWithSender(packageIds);
         return packages.stream()

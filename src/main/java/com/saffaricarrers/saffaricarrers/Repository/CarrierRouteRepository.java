@@ -308,5 +308,14 @@ public interface CarrierRouteRepository extends JpaRepository<CarrierRoute, Long
             @Param("searchLat") double searchLatitude,
             @Param("searchLng") double searchLongitude);
     long countByRouteStatusAndAvailableDate(CarrierRoute.RouteStatus status, LocalDate date);
-
+    /**
+     * ADMIN ONLY: Get ALL routes with no date filter, no capacity filter
+     * Used by admin panel to see historical + future routes
+     */
+    @Query("SELECT DISTINCT cr FROM CarrierRoute cr " +
+            "LEFT JOIN FETCH cr.carrierProfile cp " +
+            "LEFT JOIN FETCH cp.user " +
+            "LEFT JOIN FETCH cr.routePricing " +
+            "ORDER BY cr.createdAt DESC")
+    List<CarrierRoute> findAllRoutesForAdmin();
 }

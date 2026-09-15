@@ -183,32 +183,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
             @Param("status") Package.PackageStatus status);
 
     // Simplified route query that returns Package entities directly
-    @Query(value = """
-        SELECT p.*
-        FROM packages p 
-        WHERE p.status = 'CREATED'
-        AND (
-            6371 * acos(
-                cos(radians(:fromLat)) * cos(radians(p.latitude)) * 
-                cos(radians(p.longitude) - radians(:fromLng)) + 
-                sin(radians(:fromLat)) * sin(radians(p.latitude))
-            ) <= :corridorWidthKm
-        )
-        ORDER BY (
-            6371 * acos(
-                cos(radians(:fromLat)) * cos(radians(p.latitude)) * 
-                cos(radians(p.longitude) - radians(:fromLng)) + 
-                sin(radians(:fromLat)) * sin(radians(p.latitude))
-            )
-        )
-        LIMIT 50
-        """, nativeQuery = true)
-    List<Package> findPackagesAlongRouteSimplified(
-            @Param("fromLat") double fromLatitude,
-            @Param("fromLng") double fromLongitude,
-            @Param("toLat") double toLatitude,
-            @Param("toLng") double toLongitude,
-            @Param("corridorWidthKm") double corridorWidthKm);
+
 
 
     @EntityGraph(value = "Package.withSender", type = EntityGraph.EntityGraphType.LOAD)
@@ -292,33 +267,33 @@ List<Package> findBySenderOrderByCreatedAtDesc(User sender);
     /**
      * ✅ OPTIMIZED: Get package IDs along route
      */
+    /**
+     * ✅ OPTIMIZED: Get package IDs along route
+     */
     @Query(value = """
-        SELECT p.package_id
-        FROM packages p
-        WHERE p.status = 'CREATED'
-        AND (
-            6371 * acos(
-                cos(radians(:fromLat)) * cos(radians(p.latitude)) *
-                cos(radians(p.longitude) - radians(:fromLng)) +
-                sin(radians(:fromLat)) * sin(radians(p.latitude))
-            ) <= :corridorWidthKm
+    SELECT p.package_id
+    FROM packages p
+    WHERE p.status = 'CREATED'
+    AND (
+        6371 * acos(
+            cos(radians(:fromLat)) * cos(radians(p.latitude)) *
+            cos(radians(p.longitude) - radians(:fromLng)) +
+            sin(radians(:fromLat)) * sin(radians(p.latitude))
+        ) <= :corridorWidthKm
+    )
+    ORDER BY (
+        6371 * acos(
+            cos(radians(:fromLat)) * cos(radians(p.latitude)) *
+            cos(radians(p.longitude) - radians(:fromLng)) +
+            sin(radians(:fromLat)) * sin(radians(p.latitude))
         )
-        ORDER BY (
-            6371 * acos(
-                cos(radians(:fromLat)) * cos(radians(p.latitude)) *
-                cos(radians(p.longitude) - radians(:fromLng)) +
-                sin(radians(:fromLat)) * sin(radians(p.latitude))
-            )
-        )
-        LIMIT 50
-        """, nativeQuery = true)
+    )
+    LIMIT 50
+    """, nativeQuery = true)
     List<Long> findPackageIdsAlongRouteSimplified(
             @Param("fromLat") double fromLatitude,
             @Param("fromLng") double fromLongitude,
-            @Param("toLat") double toLatitude,
-            @Param("toLng") double toLongitude,
             @Param("corridorWidthKm") double corridorWidthKm);
-
     /**
      * ✅ OPTIMIZED: Get package IDs in bounding box
      */
@@ -359,4 +334,37 @@ List<Package> findBySenderOrderByCreatedAtDesc(User sender);
             "WHERE p.createdAt BETWEEN :from AND :to GROUP BY CAST(p.createdAt AS date)")
     List<Object[]> countGroupByCreatedDate(
             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+//    @Query("""
+//    SELECT p FROM Package p
+//    WHERE p.status IN ('CREATED', 'CONFIRMED')
+//      AND p.latitude  BETWEEN :minLat AND :maxLat
+//      AND p.longitude BETWEEN :minLng AND :maxLng
+//      AND p.latitude  != 0.0
+//      AND p.longitude != 0.0
+//      AND (p.sender IS NULL OR p.sender.userId != :excludeUserId)
+//""")
+//    List<Package> findActivePackagesInBoundingBox(
+//            @Param("minLat") double minLat,
+//            @Param("maxLat") double maxLat,
+//            @Param("minLng") double minLng,
+//            @Param("maxLng") double maxLng,
+//            @Param("excludeUserId") String excludeUserId
+//    );
+    @EntityGraph(value = "Package.withSender", type = EntityGraph.EntityGraphType.LOAD)
+    @Query("""
+    SELECT p FROM Package p
+    WHERE p.status IN ('CREATED', 'CONFIRMED')
+      AND p.latitude  BETWEEN :minLat AND :maxLat
+      AND p.longitude BETWEEN :minLng AND :maxLng
+      AND p.latitude  != 0.0
+      AND p.longitude != 0.0
+      AND (p.sender IS NULL OR p.sender.userId != :excludeUserId)
+""")
+    List<Package> findActivePackagesInBoundingBox(
+            @Param("minLat") double minLat,
+            @Param("maxLat") double maxLat,
+            @Param("minLng") double minLng,
+            @Param("maxLng") double maxLng,
+            @Param("excludeUserId") String excludeUserId
+    );
 }

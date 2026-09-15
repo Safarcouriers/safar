@@ -3,10 +3,12 @@ package com.saffaricarrers.saffaricarrers.Services;
 import com.saffaricarrers.saffaricarrers.Dtos.*;
 import com.saffaricarrers.saffaricarrers.Entity.*;
 import com.saffaricarrers.saffaricarrers.Entity.Package;
+import com.saffaricarrers.saffaricarrers.Exception.ResourceNotFoundException;
 import com.saffaricarrers.saffaricarrers.Repository.*;
 import com.saffaricarrers.saffaricarrers.Responses.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +29,13 @@ public class AdminDashboardService {
     private final PackageRepository packageRepository;
     private final DeliveryRequestRepository deliveryRequestRepository;
     private final PaymentRepository paymentRepository;
+    private final LocationTrackingRepository locationTrackingRepository;
+    private final AddressRepository addressRepository;
+    private final CarrierVehicleVerificationRepository carrierVehicleVerificationRepository;
     private final CarrierRouteRepository carrierRouteRepository;
     private final DocumentVerificationStatusRepository documentStatusRepository;
 
     // ==================== MAIN DASHBOARD STATS ====================
-    // ✅ FIX: Single method, called ONCE by the controller. Sub-endpoints now call
-    //    dedicated lightweight methods below rather than re-fetching the full dashboard.
 
     public AdminDashboardResponse getDashboardStats() {
         AdminDashboardResponse response = new AdminDashboardResponse();
@@ -49,7 +52,6 @@ public class AdminDashboardService {
     // ==================== USER STATISTICS ====================
 
     public UserStatsDto getUserStats() {
-        // ✅ FIX: Use COUNT queries — zero object loading
         long total    = userRepository.count();
         long verified = userRepository.countByVerified(true);
         long active   = userRepository.countByStatus(User.UserStatus.ACTIVE);
@@ -57,7 +59,6 @@ public class AdminDashboardService {
         long carriers = userRepository.countByUserType(User.UserType.CARRIER);
         long both     = userRepository.countByUserType(User.UserType.BOTH);
 
-        // Gender breakdown — one aggregation query
         Map<String, Long> genderBreakdown = userRepository.countGroupByGender()
                 .stream()
                 .collect(Collectors.toMap(
@@ -81,7 +82,6 @@ public class AdminDashboardService {
     // ==================== VERIFICATION STATISTICS ====================
 
     public VerificationStatsDto getVerificationStats() {
-        // ✅ FIX: All count queries, no findAll()
         long total    = documentStatusRepository.count();
         long verified = documentStatusRepository.countByStatus(
                 DocumentVerificationStatus.DocumentVerificationStatusEnum.DOCUMENT_VERIFIED);
@@ -104,7 +104,6 @@ public class AdminDashboardService {
     }
 
     private Map<String, Long> getUsersStuckAtVerificationStages() {
-        // ✅ FIX: Three targeted COUNT queries instead of findAll() + in-memory filter
         Map<String, Long> stuck = new HashMap<>();
         stuck.put("PENDING_VERIFICATION",
                 userRepository.countByVerificationStatus(User.VerificationStatus.PENDING));
@@ -118,7 +117,6 @@ public class AdminDashboardService {
     // ==================== PACKAGE STATISTICS ====================
 
     public PackageStatsDto1 getPackageStats() {
-        // ✅ FIX: One aggregation query for status counts + count queries for the rest
         long total = packageRepository.count();
 
         Map<String, Long> statusCounts = packageRepository.countGroupByStatus()
@@ -165,7 +163,6 @@ public class AdminDashboardService {
     // ==================== DELIVERY REQUEST STATISTICS ====================
 
     public DeliveryStatsDto getDeliveryStats() {
-        // ✅ Already uses countByStatus — kept as-is, it was fine
         DeliveryStatsDto stats = new DeliveryStatsDto();
         stats.setTotalRequests(deliveryRequestRepository.count());
         stats.setPendingRequests(deliveryRequestRepository.countByStatus(DeliveryRequest.RequestStatus.PENDING));
@@ -188,7 +185,6 @@ public class AdminDashboardService {
     // ==================== COMMISSION STATISTICS ====================
 
     public CommissionStatsDto getCommissionStats() {
-        // ✅ FIX: Aggregation queries instead of findAll() + stream
         Double pendingCommission = carrierProfileRepository.sumPendingCommission();
         Double totalEarnings     = carrierProfileRepository.sumTotalEarnings();
 
@@ -217,7 +213,6 @@ public class AdminDashboardService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay   = today.atTime(23, 59, 59);
 
-        // ✅ FIX: All targeted date-range COUNT / SUM queries — no findAll()
         TodayOverviewDto overview = new TodayOverviewDto();
         overview.setPackagesCreatedToday(
                 packageRepository.countByCreatedAtBetween(startOfDay, endOfDay));
@@ -239,7 +234,6 @@ public class AdminDashboardService {
     }
 
     // ==================== DAY-WISE ANALYTICS ====================
-    // ✅ FIX: Load all data in BULK, then partition in memory — NOT N queries per day
 
     public DayWiseAnalyticsResponse getDayWiseAnalytics(int days) {
         LocalDate from = LocalDate.now().minusDays(days - 1);
@@ -247,7 +241,6 @@ public class AdminDashboardService {
         LocalDateTime fromDt = from.atStartOfDay();
         LocalDateTime toDt   = to.atTime(23, 59, 59);
 
-        // ✅ 5 queries total regardless of `days` value
         List<Object[]> packagesByDay   = packageRepository.countGroupByCreatedDate(fromDt, toDt);
         List<Object[]> deliveriesByDay = deliveryRequestRepository.countDeliveredGroupByDate(fromDt, toDt);
         List<Object[]> revenueByDay    = paymentRepository.sumRevenueGroupByDate(fromDt, toDt);
@@ -255,7 +248,6 @@ public class AdminDashboardService {
         List<Object[]> usersByDay      = userRepository.countGroupByCreatedDate(fromDt, toDt);
         List<Object[]> requestsByDay   = deliveryRequestRepository.countGroupByRequestedDate(fromDt, toDt);
 
-        // Convert to maps keyed by LocalDate for O(1) lookup
         Map<LocalDate, Long>   pkgMap  = toDateLongMap(packagesByDay);
         Map<LocalDate, Long>   delMap  = toDateLongMap(deliveriesByDay);
         Map<LocalDate, Double> revMap  = toDateDoubleMap(revenueByDay);
@@ -286,7 +278,6 @@ public class AdminDashboardService {
     // ==================== DETAILED LISTS ====================
 
     public PendingDeliveriesResponse getPendingDeliveries() {
-        // These still load entities — acceptable for list views
         List<DeliveryRequest> pendingRequests = deliveryRequestRepository
                 .findAllByStatusWithDetails(DeliveryRequest.RequestStatus.PENDING);
 
@@ -320,7 +311,425 @@ public class AdminDashboardService {
         return new UserListResponse((long) details.size(), details);
     }
 
+    // ==================== ORDERS WITH PAYMENTS ====================
+    // ✅ NEW: Returns every delivery request joined with its payment for the admin orders table.
+    //         Supports filtering by delivery status AND by payment/commission status.
+
+    public List<OrderSummaryDto> getAllOrdersWithPayments(String status, int size) {
+        // Fetch delivery requests (with sender, carrier, package eagerly loaded)
+        List<DeliveryRequest> requests;
+
+        if ("all".equalsIgnoreCase(status)) {
+            requests = deliveryRequestRepository
+                    .findAllWithDetailsOrderByRequestedAtDesc(PageRequest.of(0, size));
+        } else {
+            // Support both delivery-status filter (e.g. "DELIVERED") and
+            // payment-side filters ("COMMISSION_PENDING", "TRANSFER_PENDING")
+            switch (status.toUpperCase()) {
+                case "COMMISSION_PENDING":
+                    // COD orders where the carrier has not yet paid commission back
+                    requests = deliveryRequestRepository
+                            .findAllWithDetailsOrderByRequestedAtDesc(PageRequest.of(0, size))
+                            .stream()
+                            .filter(r -> r.getPayment() != null
+                                    && r.getPayment().getPaymentMethod() == Payment.PaymentMethod.COD
+                                    && (r.getPayment().getCommissionPaid() == null
+                                    || !r.getPayment().getCommissionPaid()))
+                            .collect(Collectors.toList());
+                    break;
+
+                case "TRANSFER_PENDING":
+                    requests = deliveryRequestRepository
+                            .findAllWithDetailsOrderByRequestedAtDesc(PageRequest.of(0, size))
+                            .stream()
+                            .filter(r -> r.getPayment() != null
+                                    && r.getPayment().getCarrierTransferStatus() == Payment.TransferStatus.PENDING)
+                            .collect(Collectors.toList());
+                    break;
+
+                default:
+                    // Treat as DeliveryRequest.RequestStatus
+                    try {
+                        DeliveryRequest.RequestStatus rs =
+                                DeliveryRequest.RequestStatus.valueOf(status.toUpperCase());
+                        requests = deliveryRequestRepository
+                                .findAllByStatusWithDetailsOrderByRequestedAtDesc(rs, PageRequest.of(0, size));
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Unknown status filter '{}', returning all orders", status);
+                        requests = deliveryRequestRepository
+                                .findAllWithDetailsOrderByRequestedAtDesc(PageRequest.of(0, size));
+                    }
+            }
+        }
+
+        return requests.stream()
+                .map(this::mapToOrderSummary)
+                .collect(Collectors.toList());
+    }
+
+    // ==================== COMPLETE RIDE HISTORY DETAIL ====================
+
+    /**
+     * Admin-only read model for a single delivery/ride. This intentionally aggregates
+     * the data already collected by the existing sender/carrier flow: parties,
+     * addresses, package images, pickup/delivery proof, OTPs, timestamps, payment,
+     * route/vehicle information and the full GPS breadcrumb history.
+     */
+    public Map<String, Object> getRideHistoryDetail(Long requestId) {
+        DeliveryRequest req = deliveryRequestRepository.findByRequestIdWithDetails(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery request not found: " + requestId));
+
+        Package pkg = req.getPackageEntity();
+        User sender = req.getSender();
+        User carrier = req.getCarrier();
+        CarrierRoute route = req.getCarrierRoute();
+        Payment payment = req.getPayment();
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("requestId", req.getRequestId());
+        out.put("requestType", req.getRequestType());
+        out.put("isRiderDelivery", req.getIsRiderDelivery());
+        out.put("status", req.getStatus());
+        out.put("requestedAt", req.getRequestedAt());
+        out.put("acceptedAt", req.getAcceptedAt());
+        out.put("pickedUpAt", req.getPickedUpAt());
+        out.put("deliveredAt", req.getDeliveredAt());
+        out.put("createdAt", req.getCreatedAt());
+        out.put("updatedAt", req.getUpdatedAt());
+        out.put("senderNote", req.getSenderNote());
+        out.put("carrierNote", req.getCarrierNote());
+
+        Map<String, Object> senderMap = personMap(sender);
+        Map<String, Object> carrierMap = personMap(carrier);
+        if (sender != null) {
+            senderMap.put("profileUrl", sender.getProfileUrl());
+            senderMap.put("aadharFrontUrl", sender.getAadharFrontUrl());
+            senderMap.put("aadharBackUrl", sender.getAadharBackUrl());
+            senderMap.put("panCardUrl", sender.getPanCardUrl());
+        }
+        if (carrier != null) {
+            carrierMap.put("profileUrl", carrier.getProfileUrl());
+            carrierMap.put("aadharFrontUrl", carrier.getAadharFrontUrl());
+            carrierMap.put("aadharBackUrl", carrier.getAadharBackUrl());
+            carrierMap.put("panCardUrl", carrier.getPanCardUrl());
+        }
+        out.put("sender", senderMap);
+        out.put("carrier", carrierMap);
+        out.put("senderAddresses", sender != null && sender.getAddresses() != null
+                ? sender.getAddresses().stream().map(this::addressMap).collect(Collectors.toList()) : List.of());
+        out.put("carrierAddresses", carrier != null && carrier.getAddresses() != null
+                ? carrier.getAddresses().stream().map(this::addressMap).collect(Collectors.toList()) : List.of());
+
+        if (pkg != null) {
+            Map<String, Object> packageMap = new LinkedHashMap<>();
+            packageMap.put("packageId", pkg.getPackageId());
+            packageMap.put("productName", pkg.getProductName());
+            packageMap.put("productDescription", pkg.getProductDescription());
+            packageMap.put("productValue", pkg.getProductValue());
+            packageMap.put("productType", pkg.getProductType());
+            packageMap.put("transportType", pkg.getTransportType());
+            packageMap.put("weight", pkg.getWeight());
+            packageMap.put("length", pkg.getLength());
+            packageMap.put("width", pkg.getWidth());
+            packageMap.put("height", pkg.getHeight());
+            packageMap.put("fromAddress", pkg.getFromAddress());
+            packageMap.put("toAddress", pkg.getToAddress());
+            packageMap.put("addressId", pkg.getAddressId());
+            packageMap.put("latitude", pkg.getLatitude());
+            packageMap.put("longitude", pkg.getLongitude());
+            packageMap.put("toLatitude", pkg.getToLatitude());
+            packageMap.put("toLongitude", pkg.getToLongitude());
+            packageMap.put("pickUpDate", pkg.getPickUpDate());
+            packageMap.put("dropDate", pkg.getDropDate());
+            packageMap.put("availableTime", pkg.getAvailableTime());
+            packageMap.put("deadlineTime", pkg.getDeadlineTime());
+            packageMap.put("tripCharge", pkg.getTripCharge());
+            packageMap.put("pricePerKg", pkg.getPricePerKg());
+            packageMap.put("pricePerTon", pkg.getPricePerTon());
+            packageMap.put("insurance", pkg.getInsurance());
+            packageMap.put("pickupOtp", pkg.getPickupOtp());
+            packageMap.put("deliveryOtp", pkg.getDeliveryOtp());
+            packageMap.put("status", pkg.getStatus());
+            packageMap.put("productImages", pkg.getProductImages() != null ? new ArrayList<>(pkg.getProductImages()) : List.of());
+            packageMap.put("invoiceImage", pkg.getProductInvoiceImage());
+            if (pkg.getInsuranceDetails() != null) {
+                Insurance insurance = pkg.getInsuranceDetails();
+                Map<String, Object> insuranceMap = new LinkedHashMap<>();
+                insuranceMap.put("insuranceId", insurance.getInsuranceId());
+                insuranceMap.put("productValue", insurance.getProductValue());
+                insuranceMap.put("insuranceAmount", insurance.getInsuranceAmount());
+                insuranceMap.put("coveragePercentage", insurance.getCoveragePercentage());
+                insuranceMap.put("status", insurance.getStatus());
+                insuranceMap.put("policyNumber", insurance.getPolicyNumber());
+                insuranceMap.put("validUntil", insurance.getValidUntil());
+                insuranceMap.put("createdAt", insurance.getCreatedAt());
+                packageMap.put("insuranceDetails", insuranceMap);
+            }
+            out.put("package", packageMap);
+
+            if (pkg.getAddressId() != null) {
+                addressRepository.findById(pkg.getAddressId()).ifPresent(a -> out.put("senderAddress", addressMap(a)));
+            }
+        }
+
+        if (route != null) {
+            Map<String, Object> routeMap = new LinkedHashMap<>();
+            routeMap.put("routeId", route.getRouteId());
+            routeMap.put("fromLocation", route.getFromLocation());
+            routeMap.put("toLocation", route.getToLocation());
+            routeMap.put("longAddressId", route.getLongAddressId());
+            routeMap.put("availableDate", route.getAvailableDate());
+            routeMap.put("deadlineDate", route.getDeadlineDate());
+            routeMap.put("availableTime", route.getAvailableTime());
+            routeMap.put("deadlineTime", route.getDeadlineTime());
+            routeMap.put("transportType", route.getTransportType());
+            routeMap.put("maxWeight", route.getMaxWeight());
+            routeMap.put("maxQuantity", route.getMaxQuantity());
+            routeMap.put("currentWeight", route.getCurrentWeight());
+            routeMap.put("currentQuantity", route.getCurrentQuantity());
+            routeMap.put("routeStatus", route.getRouteStatus());
+            routeMap.put("latitude", route.getLatitude());
+            routeMap.put("longitude", route.getLongitude());
+            routeMap.put("toLatitude", route.getToLatitude());
+            routeMap.put("toLongitude", route.getToLongitude());
+            routeMap.put("isDirectRoute", route.getIsDirectRoute());
+            routeMap.put("intermediateStops", route.getIntermediateStops());
+            out.put("route", routeMap);
+            if (route.getLongAddressId() != null) {
+                addressRepository.findById(route.getLongAddressId()).ifPresent(a -> out.put("carrierAddress", addressMap(a)));
+            }
+        }
+
+        Map<String, Object> otp = new LinkedHashMap<>();
+        otp.put("pickupOtp", req.getPickupOtp() != null ? req.getPickupOtp() : pkg != null ? pkg.getPickupOtp() : null);
+        otp.put("deliveryOtp", req.getDeliveryOtp() != null ? req.getDeliveryOtp() : pkg != null ? pkg.getDeliveryOtp() : null);
+        otp.put("pickupVerified", req.getPickedUpAt() != null);
+        otp.put("deliveryVerified", req.getDeliveredAt() != null);
+        out.put("otps", otp);
+
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("pickupPhoto", req.getPickupPhoto());
+        proof.put("deliveryPhoto", req.getDeliveryPhoto());
+        out.put("proof", proof);
+
+        if (carrier != null) {
+            carrierProfileRepository.findByUser(carrier).ifPresent(profile -> {
+                Map<String, Object> cp = new LinkedHashMap<>();
+                cp.put("carrierId", profile.getCarrierId());
+                cp.put("userUid", profile.getUserUid());
+                cp.put("isVerified", profile.getIsVerified());
+                cp.put("status", profile.getStatus());
+                cp.put("isOnline", profile.getIsOnline());
+                cp.put("searchRadiusKm", profile.getSearchRadiusKm());
+                cp.put("totalEarnings", profile.getTotalEarnings());
+                cp.put("pendingCommission", profile.getPendingCommission());
+                cp.put("lastLat", profile.getLastLat());
+                cp.put("lastLng", profile.getLastLng());
+                cp.put("lastLocationAt", profile.getLastLocationAt());
+                cp.put("createdAt", profile.getCreatedAt());
+                cp.put("updatedAt", profile.getUpdatedAt());
+                if (profile.getBankDetails() != null) {
+                    BankDetails b = profile.getBankDetails();
+                    Map<String, Object> bank = new LinkedHashMap<>();
+                    bank.put("accountHolderName", b.getAccountHolderName());
+                    bank.put("accountNumber", b.getAccountNumber());
+                    bank.put("maskedAccountNumber", b.getMaskedAccountNumber());
+                    bank.put("ifscCode", b.getIfscCode());
+                    bank.put("bankName", b.getBankName());
+                    bank.put("branchName", b.getBranchName());
+                    bank.put("accountType", b.getAccountType());
+                    bank.put("upiId", b.getUpiId());
+                    bank.put("isVerified", b.getIsVerified());
+                    bank.put("verificationStatus", b.getVerificationStatus());
+                    bank.put("verifiedAt", b.getVerifiedAt());
+                    cp.put("bankDetails", bank);
+                }
+                carrierVehicleVerificationRepository.findByUid(carrier.getUserId()).ifPresent(v -> {
+                    Map<String, Object> vehicle = new LinkedHashMap<>();
+                    vehicle.put("rcNumber", v.getRcNumber());
+                    vehicle.put("rcStatus", v.getRcStatus());
+                    vehicle.put("rcVerifiedOwnerName", v.getRcVerifiedOwnerName());
+                    vehicle.put("rcVehicleNumber", v.getRcVehicleNumber());
+                    vehicle.put("rcVehicleClass", v.getRcVehicleClass());
+                    vehicle.put("rcVerifiedAt", v.getRcVerifiedAt());
+                    vehicle.put("dlNumber", v.getDlNumber());
+                    vehicle.put("dlStatus", v.getDlStatus());
+                    vehicle.put("dlVerifiedName", v.getDlVerifiedName());
+                    vehicle.put("dlDob", v.getDlDob());
+                    vehicle.put("dlValidityFrom", v.getDlValidityFrom());
+                    vehicle.put("dlValidityTo", v.getDlValidityTo());
+                    vehicle.put("dlVehicleClasses", v.getDlVehicleClasses());
+                    vehicle.put("aadhaarVerifiedName", v.getAadhaarVerifiedName());
+                    vehicle.put("overallStatus", v.getOverallStatus());
+                    cp.put("vehicleVerification", vehicle);
+                });
+                out.put("carrierProfile", cp);
+            });
+        }
+
+        if (payment != null) {
+            Map<String, Object> pay = new LinkedHashMap<>();
+            pay.put("paymentId", payment.getPaymentId());
+            pay.put("totalAmount", payment.getTotalAmount());
+            pay.put("deliveryCharge", payment.getDeliveryCharge());
+            pay.put("insuranceAmount", payment.getInsuranceAmount());
+            pay.put("platformCommission", payment.getPlatformCommission());
+            pay.put("carrierAmount", payment.getCarrierAmount());
+            pay.put("platformFee", payment.getPlatformFee());
+            pay.put("paymentMethod", payment.getPaymentMethod());
+            pay.put("paymentStatus", payment.getPaymentStatus());
+            pay.put("paymentCompletedAt", payment.getPaymentCompletedAt());
+            pay.put("razorpayOrderId", payment.getRazorpayOrderId());
+            pay.put("razorpayPaymentId", payment.getRazorpayPaymentId());
+            pay.put("razorpayPayoutId", payment.getRazorpayPayoutId());
+            pay.put("carrierTransferStatus", payment.getCarrierTransferStatus());
+            pay.put("carrierTransferInitiatedAt", payment.getCarrierTransferInitiatedAt());
+            pay.put("carrierTransferCompletedAt", payment.getCarrierTransferCompletedAt());
+            pay.put("transferFailureReason", payment.getTransferFailureReason());
+            pay.put("commissionPaid", payment.getCommissionPaid());
+            pay.put("commissionPaidAt", payment.getCommissionPaidAt());
+            pay.put("commissionPaymentId", payment.getCommissionPaymentId());
+            pay.put("offlinePaymentNote", payment.getOfflinePaymentNote());
+            pay.put("completedBy", payment.getCompletedBy());
+            out.put("payment", pay);
+        }
+
+        List<Map<String, Object>> tracking = locationTrackingRepository
+                .findByDeliveryRequestOrderByRecordedAtAsc(req)
+                .stream().map(t -> {
+                    Map<String, Object> point = new LinkedHashMap<>();
+                    point.put("latitude", t.getLatitude());
+                    point.put("longitude", t.getLongitude());
+                    point.put("resolvedAddress", t.getResolvedAddress());
+                    point.put("speed", t.getSpeed());
+                    point.put("batteryLevel", t.getBatteryLevel());
+                    point.put("recordedAt", t.getRecordedAt());
+                    return point;
+                }).collect(Collectors.toList());
+        out.put("tracking", tracking);
+        out.put("trackingCount", tracking.size());
+        if (!tracking.isEmpty()) out.put("latestLocation", tracking.get(tracking.size() - 1));
+
+        return out;
+    }
+
+    private Map<String, Object> personMap(User u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (u == null) return m;
+        m.put("userId", u.getUserId());
+        m.put("fullName", u.getFullName());
+        m.put("email", u.getEmail());
+        m.put("mobile", u.getMobile());
+        m.put("age", u.getAge());
+        m.put("gender", u.getGender());
+        m.put("userType", u.getUserType());
+        m.put("verified", u.getVerified());
+        m.put("verificationStatus", u.getVerificationStatus());
+        m.put("status", u.getStatus());
+        m.put("createdAt", u.getCreatedAt());
+        return m;
+    }
+
+    private Map<String, Object> addressMap(Address a) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("addressId", a.getAddressId());
+        m.put("addressType", a.getAddressType());
+        m.put("fullName", a.getFullName());
+        m.put("address", a.getAddress());
+        m.put("city", a.getCity());
+        m.put("state", a.getState());
+        m.put("country", a.getCountry());
+        m.put("pincode", a.getPincode());
+        m.put("mobile", a.getMobile());
+        m.put("isDefault", a.getDefault());
+        m.put("latitude", a.getLatitude());
+        m.put("longitude", a.getLongitude());
+        m.put("createdAt", a.getCreatedAt());
+        return m;
+    }
+
+    // ==================== MARK COMMISSION PAID (Admin manual action) ====================
+    // ✅ NEW: Admin manually marks a COD commission as paid after collecting from the carrier.
+
+    @Transactional
+    public void markCommissionPaid(Long paymentId, String adminNote) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+
+        if (payment.getPaymentMethod() != Payment.PaymentMethod.COD) {
+            throw new IllegalStateException(
+                    "Commission 'mark paid' is only applicable to COD orders. " +
+                            "Online orders deduct commission automatically.");
+        }
+
+        if (Boolean.TRUE.equals(payment.getCommissionPaid())) {
+            throw new IllegalStateException("Commission already marked as paid for payment: " + paymentId);
+        }
+
+        payment.setCommissionPaid(true);
+        payment.setCommissionPaidAt(LocalDateTime.now());
+
+        // Also reduce the pending commission on the carrier's profile
+        DeliveryRequest req = payment.getDeliveryRequest();
+        if (req != null && req.getCarrier() != null) {
+            carrierProfileRepository.findByUser(req.getCarrier()).ifPresent(profile -> {
+                BigDecimal pending = profile.getPendingCommission() != null
+                        ? profile.getPendingCommission() : BigDecimal.ZERO;
+                BigDecimal commission = payment.getPlatformCommission() != null
+                        ? BigDecimal.valueOf(payment.getPlatformCommission()) : BigDecimal.ZERO;
+                BigDecimal newPending = pending.subtract(commission);
+                profile.setPendingCommission(newPending.compareTo(BigDecimal.ZERO) < 0
+                        ? BigDecimal.ZERO : newPending);
+                carrierProfileRepository.save(profile);
+                log.info("✅ Reduced pending commission for carrier {} by ₹{}",
+                        req.getCarrier().getUserId(), commission);
+            });
+        }
+
+        paymentRepository.save(payment);
+        log.info("✅ Admin marked commission paid | paymentId={} | note={}", paymentId, adminNote);
+    }
+
     // ==================== PRIVATE HELPERS ====================
+
+    private OrderSummaryDto mapToOrderSummary(DeliveryRequest req) {
+        Payment p = req.getPayment();
+        Package pkg = req.getPackageEntity();
+        User sender  = req.getSender();
+        User carrier = req.getCarrier();
+
+        return OrderSummaryDto.builder()
+                .requestId(req.getRequestId())
+                .packageName(pkg != null ? pkg.getProductName() : "N/A")
+                .fromAddress(pkg != null ? pkg.getFromAddress() : "N/A")
+                .toAddress(pkg  != null ? pkg.getToAddress()   : "N/A")
+                .senderName(sender  != null ? sender.getFullName()  : "N/A")
+                .senderPhone(sender != null ? sender.getMobile()    : "N/A")
+                .carrierName(carrier  != null ? carrier.getFullName()  : "N/A")
+                .carrierPhone(carrier != null ? carrier.getMobile()    : "N/A")
+                .status(req.getStatus())
+                .requestedAt(req.getRequestedAt())
+                .deliveredAt(req.getDeliveredAt())
+                // ── Payment fields (null-safe) ──────────────────────────────
+                .paymentId(p != null ? p.getPaymentId() : null)
+                .totalAmount(p != null && p.getTotalAmount() != null ? p.getTotalAmount() : 0.0)
+                .platformCommission(p != null && p.getPlatformCommission() != null ? p.getPlatformCommission() : 0.0)
+                .carrierAmount(p != null && p.getCarrierAmount() != null ? p.getCarrierAmount() : 0.0)
+                .paymentMethod(p != null ? p.getPaymentMethod() : null)
+                .paymentStatus(p != null ? p.getPaymentStatus() : null)
+                .carrierTransferStatus(p != null ? p.getCarrierTransferStatus() : null)
+                .razorpayPaymentId(p != null ? p.getRazorpayPaymentId() : null)
+                .razorpayOrderId(p != null ? p.getRazorpayOrderId() : null)
+                .razorpayPayoutId(p != null ? p.getRazorpayPayoutId() : null)
+                .paymentCompletedAt(p != null ? p.getPaymentCompletedAt() : null)
+                .carrierTransferInitiatedAt(p != null ? p.getCarrierTransferInitiatedAt() : null)
+                .carrierTransferCompletedAt(p != null ? p.getCarrierTransferCompletedAt() : null)
+                .transferFailureReason(p != null ? p.getTransferFailureReason() : null)
+                .commissionPaid(p != null ? p.getCommissionPaid() : null)
+                .platformFee(p != null && p.getPlatformFee() != null ? p.getPlatformFee() : 0.0)   // ✅
+                .carrierId(req.getCarrier() != null ? req.getCarrier().getUserId() : null)
+                .build();
+    }
 
     private double getCommissionForDate(LocalDate date) {
         LocalDateTime start = date.atStartOfDay();

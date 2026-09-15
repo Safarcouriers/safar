@@ -15,21 +15,36 @@ import java.util.Optional;
 public interface CarrierProfileRepository extends JpaRepository<CarrierProfile, Long> {
 
     List<CarrierProfile> findByIsOnlineTrue();
-    @Query("""
-        SELECT cp FROM CarrierProfile cp
-        JOIN FETCH cp.user u
-        WHERE cp.isOnline = true
-          AND cp.lastLat IS NOT NULL
-          AND cp.lastLng IS NOT NULL
-          AND cp.lastLat  BETWEEN :minLat AND :maxLat
-          AND cp.lastLng  BETWEEN :minLng AND :maxLng
-    """)
-    List<CarrierProfile> findOnlineCarriersInBoundingBox(
-            @Param("minLat") double minLat,
-            @Param("maxLat") double maxLat,
-            @Param("minLng") double minLng,
-            @Param("maxLng") double maxLng
-    );
+//    @Query("""
+//        SELECT cp FROM CarrierProfile cp
+//        JOIN FETCH cp.user u
+//        WHERE cp.isOnline = true
+//          AND cp.lastLat IS NOT NULL
+//          AND cp.lastLng IS NOT NULL
+//          AND cp.lastLat  BETWEEN :minLat AND :maxLat
+//          AND cp.lastLng  BETWEEN :minLng AND :maxLng
+//    """)
+//    List<CarrierProfile> findOnlineCarriersInBoundingBox(
+//            @Param("minLat") double minLat,
+//            @Param("maxLat") double maxLat,
+//            @Param("minLng") double minLng,
+//            @Param("maxLng") double maxLng
+//    );
+@Query("""
+    SELECT cp FROM CarrierProfile cp
+    JOIN FETCH cp.user u
+    WHERE cp.isOnline = true
+      AND cp.lastLat IS NOT NULL
+      AND cp.lastLng IS NOT NULL
+      AND cp.lastLat  BETWEEN :minLat AND :maxLat
+      AND cp.lastLng  BETWEEN :minLng AND :maxLng
+""")
+List<CarrierProfile> findOnlineCarriersInBoundingBox(
+        @Param("minLat") double minLat,
+        @Param("maxLat") double maxLat,
+        @Param("minLng") double minLng,
+        @Param("maxLng") double maxLng
+);
     @EntityGraph(value = "CarrierProfile.withBankDetails", type = EntityGraph.EntityGraphType.LOAD)
     Optional<CarrierProfile> findByUserUid(String userId);
 
@@ -53,5 +68,12 @@ public interface CarrierProfileRepository extends JpaRepository<CarrierProfile, 
     long countWithPendingCommission();
 
     long countByStatus(CarrierProfile.CarrierStatus status);
-
+    // Carriers who are online but haven't sent a location update yet
+    @Query("""
+    SELECT cp FROM CarrierProfile cp
+    JOIN FETCH cp.user u
+    WHERE cp.isOnline = true
+      AND cp.lastLat IS NULL
+""")
+    List<CarrierProfile> findOnlineCarriersWithNoLocation();
 }

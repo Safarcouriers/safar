@@ -2,6 +2,7 @@ package com.saffaricarrers.saffaricarrers.Repository;
 
 import com.saffaricarrers.saffaricarrers.Entity.*;
 import com.saffaricarrers.saffaricarrers.Entity.Package;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -50,6 +51,10 @@ public interface DeliveryRequestRepository extends JpaRepository<DeliveryRequest
     List<DeliveryRequest> findByPackageEntityAndStatusIn(
             Package packageEntity,
             List<DeliveryRequest.RequestStatus> statuses);
+
+    @EntityGraph(value = "DeliveryRequest.full", type = EntityGraph.EntityGraphType.LOAD)
+    @Query("SELECT dr FROM DeliveryRequest dr WHERE dr.requestId = :requestId")
+    Optional<DeliveryRequest> findByRequestIdWithDetails(@Param("requestId") Long requestId);
 
     // ✅ Admin Dashboard Methods
     long countByStatus(DeliveryRequest.RequestStatus status);
@@ -108,4 +113,55 @@ public interface DeliveryRequestRepository extends JpaRepository<DeliveryRequest
             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
     @EntityGraph(value = "DeliveryRequest.withUsers", type = EntityGraph.EntityGraphType.LOAD)
     List<DeliveryRequest> findByPackageEntityAndCarrier(Package packageEntity, User carrier);
+    // ─────────────────────────────────────────────────────────────────────────────
+// ADD these two methods to your existing DeliveryRequestRepository interface.
+// They are the only new DB queries required by getAllOrdersWithPayments().
+// ─────────────────────────────────────────────────────────────────────────────
+
+    // 1) All requests, newest first, paged — used for "all" and payment-side filters
+    @Query("""
+    SELECT dr FROM DeliveryRequest dr
+    LEFT JOIN FETCH dr.packageEntity
+    LEFT JOIN FETCH dr.sender
+    LEFT JOIN FETCH dr.carrier
+    LEFT JOIN FETCH dr.payment
+    ORDER BY dr.requestedAt DESC
+    """)
+    List<DeliveryRequest> findAllWithDetailsOrderByRequestedAtDesc(Pageable pageable);
+
+    // 2) Filtered by RequestStatus, newest first, paged
+    @Query("""
+    SELECT dr FROM DeliveryRequest dr
+    LEFT JOIN FETCH dr.packageEntity
+    LEFT JOIN FETCH dr.sender
+    LEFT JOIN FETCH dr.carrier
+    LEFT JOIN FETCH dr.payment
+    WHERE dr.status = :status
+    ORDER BY dr.requestedAt DESC
+    """)
+    List<DeliveryRequest> findAllByStatusWithDetailsOrderByRequestedAtDesc(
+            @Param("status") DeliveryRequest.RequestStatus status,
+            Pageable pageable);
+//    Optional<DeliveryRequest> findTopByCarrierAndStatusInOrderByCreatedAtDesc(
+//          User carrier,
+//          List<DeliveryRequest.RequestStatus> statuses
+//  );
+//    Optional<DeliveryRequest> findTopByCarrierAndIsRiderDeliveryTrueAndStatusInOrderByCreatedAtDesc(
+//            User carrier, List<DeliveryRequest.RequestStatus> statuses
+//    );
+    Optional<DeliveryRequest> findTopByCarrierAndIsRiderDeliveryTrueAndStatusInOrderByCreatedAtDesc(
+            User carrier,
+            List<DeliveryRequest.RequestStatus> statuses
+    );
+
+    // Keep old one for RiderService.getActiveDelivery fallback (not needed now but safe to keep)
+    Optional<DeliveryRequest> findTopByCarrierAndStatusInOrderByCreatedAtDesc(
+            User carrier,
+            List<DeliveryRequest.RequestStatus> statuses
+    );
+    Optional<DeliveryRequest>
+    findTopByCarrierAndIsRiderDeliveryTrueAndStatusOrderByCreatedAtDesc(
+            User carrier,
+            DeliveryRequest.RequestStatus status
+    );
 }

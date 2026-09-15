@@ -1,8 +1,10 @@
 package com.saffaricarrers.saffaricarrers.Configaration;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.cloud.FirestoreClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,69 +25,57 @@ public class FirebaseConfig {
 
     @PostConstruct
     public void initialize() {
-        try {
-            initializeFirebase();
-        } catch (IOException e) {
-            log.error("Failed to initialize Firebase", e);
-            throw new RuntimeException("Firebase initialization failed", e);
-        }
-    }
-
-    private void initializeFirebase() throws IOException {
-        // Check if Firebase is already initialized
-        if (FirebaseApp.getApps().isEmpty()) {
-
-            InputStream serviceAccount = null;
-
-            try {
-                // Try to load from classpath first
-                ClassPathResource resource = new ClassPathResource(serviceAccountKeyPath);
-                if (resource.exists()) {
-                    serviceAccount = resource.getInputStream();
-                    log.info("Loading Firebase service account from classpath: {}", serviceAccountKeyPath);
-                } else {
-                    // Try to load from file system
-                    serviceAccount = new FileInputStream(serviceAccountKeyPath);
-                    log.info("Loading Firebase service account from file system: {}", serviceAccountKeyPath);
-                }
-
-                FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
-
-                FirebaseApp.initializeApp(options);
-                log.info("Firebase initialized successfully for FCM");
-
-            } catch (Exception e) {
-                log.error("Error initializing Firebase with service account", e);
-                // Fallback to default credentials (useful for Google Cloud deployment)
-                try {
-                    FirebaseOptions options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.getApplicationDefault())
-                            .build();
-
-                    FirebaseApp.initializeApp(options);
-                    log.info("Firebase initialized with default credentials");
-                } catch (Exception defaultCredsException) {
-                    log.error("Failed to initialize Firebase with default credentials", defaultCredsException);
-                    throw new RuntimeException("Firebase initialization failed", defaultCredsException);
-                }
-            } finally {
-                if (serviceAccount != null) {
-                    try {
-                        serviceAccount.close();
-                    } catch (IOException e) {
-                        log.warn("Error closing service account input stream", e);
-                    }
-                }
-            }
-        } else {
+        if (!FirebaseApp.getApps().isEmpty()) {
             log.info("Firebase already initialized");
+            return;
+        }
+
+        InputStream serviceAccount = null;
+        try {
+            ClassPathResource resource = new ClassPathResource(serviceAccountKeyPath);
+            if (resource.exists()) {
+                serviceAccount = resource.getInputStream();
+                log.info("Firebase: loading from classpath: {}", serviceAccountKeyPath);
+            } else {
+                serviceAccount = new FileInputStream(serviceAccountKeyPath);
+                log.info("Firebase: loading from filesystem: {}", serviceAccountKeyPath);
+            }
+
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+
+            FirebaseApp.initializeApp(options);
+            log.info("Firebase initialized (FCM + Firestore ready)");
+
+        } catch (Exception e) {
+            log.warn("Service account load failed, trying default credentials: {}", e.getMessage());
+            try {
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.getApplicationDefault())
+                        .build();
+                FirebaseApp.initializeApp(options);
+                log.info("Firebase initialized with default credentials");
+            } catch (Exception ex) {
+                throw new RuntimeException("Firebase initialization failed", ex);
+            }
+        } finally {
+            if (serviceAccount != null) {
+                try { serviceAccount.close(); }
+                catch (IOException e) { log.warn("Error closing service account stream", e); }
+            }
         }
     }
 
+    // Used by FCM push notifications, Auth, etc.
     @Bean
     public FirebaseApp firebaseApp() {
         return FirebaseApp.getInstance();
+    }
+
+    // Used by Firestore queries (your monetization/subscription logic)
+    @Bean
+    public Firestore firestore() {
+        return FirestoreClient.getFirestore();
     }
 }

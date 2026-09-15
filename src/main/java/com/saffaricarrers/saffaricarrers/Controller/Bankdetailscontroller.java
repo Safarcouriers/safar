@@ -156,23 +156,23 @@ public class Bankdetailscontroller {
      * Admin: Verify or reject bank details
      * PATCH /api/bank/admin/{bankId}/verify
      */
-    @PatchMapping("/admin/{bankId}/verify")
-    public ResponseEntity<ApiResponse1<BankDetailsDto.Response>> verifyBankDetails(
-            @PathVariable Long bankId,
-            @RequestHeader("adminId") String adminId,
-            @RequestBody BankDetailsDto.VerifyRequest request) {
-        try {
-            BankDetailsDto.Response response = bankDetailsService.adminVerifyBankDetails(
-                    bankId, adminId, request);
-            String msg = "APPROVE".equalsIgnoreCase(request.getAction())
-                    ? "Bank details approved. Carrier is now active."
-                    : "Bank details rejected. Carrier has been notified.";
-            return ResponseEntity.ok(ApiResponse1.success(msg, response));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ApiResponse1.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("❌ Admin verify error: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(ApiResponse1.error("Verification failed."));
-        }
-    }
+//    @PatchMapping("/admin/{bankId}/verify")
+//    public ResponseEntity<ApiResponse1<BankDetailsDto.Response>> verifyBankDetails(
+//            @PathVariable Long bankId,
+//            @RequestHeader("adminId") String adminId,
+//            @RequestBody BankDetailsDto.VerifyRequest request) {
+//        try {
+//            BankDetailsDto.Response response = bankDetailsService.adminVerifyBankDetails(
+//                    bankId, adminId, request);
+//            String msg = "APPROVE".equalsIgnoreCase(request.getAction())
+//                    ? "Bank details approved. Carrier is now active."
+//                    : "Bank details rejected. Carrier has been notified.";
+//            return ResponseEntity.ok(ApiResponse1.success(msg, response));
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest().body(ApiResponse1.error(e.getMessage()));
+//        } catch (Exception e) {
+//            log.error("❌ Admin verify error: {}", e.getMessage(), e);
+//            return ResponseEntity.internalServerError().body(ApiResponse1.error("Verification failed."));
+//        }
+//    }
 }

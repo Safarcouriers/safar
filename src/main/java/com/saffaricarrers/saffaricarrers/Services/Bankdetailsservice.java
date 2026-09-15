@@ -10,7 +10,6 @@ import com.saffaricarrers.saffaricarrers.Repository.BankDetailsRepository;
 import com.saffaricarrers.saffaricarrers.Repository.CarrierProfileRepository;
 import com.saffaricarrers.saffaricarrers.Repository.NotificationRepository;
 import com.saffaricarrers.saffaricarrers.Repository.UserRepository;
-import com.saffaricarrers.saffaricarrers.Services.RazorpayPayoutService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,17 +19,18 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Collectors;
-
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,31 +42,28 @@ public class Bankdetailsservice {
     private final NotificationRepository notificationRepository;
     private final JavaMailSender mailSender;
     private final FirebaseNotificationService firebaseNotificationService;
-    private final RazorpayPayoutService razorpayPayoutService;
+    private final RazorpayRouteService razorpayRouteService;
 
     @Value("${admin.email}")
     private String adminEmail;
 
     // =====================================================================
-    // CARRIER — SUBMIT BANK DETAILS (first time)
+    // CARRIER — SUBMIT BANK DETAILS
     // =====================================================================
 
     @Transactional
-    @CacheEvict(value = {"profiles", "users"}, allEntries = true) // ← ADD THIS
+    @CacheEvict(value = {"profiles", "users"}, allEntries = true)
     public BankDetailsDto.Response submitBankDetails(String userId, BankDetailsDto.SubmitRequest req) {
         CarrierProfile profile = getCarrierProfileByUserId(userId);
         User carrier = profile.getUser();
 
-        // ✅ Account number must match confirm field
         if (req.getAccountNumber() == null || !req.getAccountNumber().equals(req.getConfirmAccountNumber())) {
             throw new IllegalArgumentException("Account numbers do not match. Please re-enter carefully.");
         }
 
-        // ✅ Basic format validations
         validateAccountNumber(req.getAccountNumber());
         validateIfscCode(req.getIfscCode());
 
-        // ✅ Duplicate account check across OTHER carriers
         boolean accountTaken = bankDetailsRepository
                 .existsByAccountNumberAndCarrierProfileNot(req.getAccountNumber().trim(), profile);
         if (accountTaken) {
@@ -74,11 +71,18 @@ public class Bankdetailsservice {
                     "This account number is already registered with another carrier.");
         }
 
-        // ✅ If existing bank details exist, UPDATE them (re-submission resets verification)
         BankDetails bankDetails = bankDetailsRepository.findByCarrierProfile(profile)
                 .orElse(new BankDetails());
 
         boolean isResubmission = bankDetails.getBankDetailsId() != null;
+
+        // ✅ Reset Razorpay IDs on resubmission — bank details changed so old IDs invalid
+        if (isResubmission) {
+            bankDetails.setRazorpayContactId(null);
+            bankDetails.setRazorpayFundAccountId(null);
+            bankDetails.setRazorpayUpiVpaFundAccountId(null);
+            log.info("♻️ Resubmission — cleared old Razorpay IDs for carrier: {}", userId);
+        }
 
         bankDetails.setCarrierProfile(profile);
         bankDetails.setAccountHolderName(req.getAccountHolderName().trim().toUpperCase());
@@ -89,38 +93,64 @@ public class Bankdetailsservice {
         bankDetails.setAccountType(parseAccountType(req.getAccountType()));
         bankDetails.setUpiId(req.getUpiId() != null ? req.getUpiId().trim() : null);
 
-        // ✅ Always reset verification on any submission/re-submission
-        bankDetails.setIsVerified(false);
-        bankDetails.setVerificationStatus(BankDetails.VerificationStatus.PENDING);
+        bankDetails.setIsVerified(true);
+        bankDetails.setVerificationStatus(BankDetails.VerificationStatus.VERIFIED);
         bankDetails.setVerificationNote(null);
-        bankDetails.setVerifiedAt(null);
-        bankDetails.setVerifiedBy(null);
+        bankDetails.setVerifiedAt(LocalDateTime.now());
+        bankDetails.setVerifiedBy("AUTO");
 
-        BankDetails saved = bankDetailsRepository.save(bankDetails);
+        BankDetails saved = bankDetailsRepository.saveAndFlush(bankDetails); // ✅ flush immediately
 
-        // ✅ Link to carrier profile
         profile.setBankDetails(saved);
-        // Keep carrier INACTIVE until admin verifies
-        profile.setIsVerified(false);
-        profile.setStatus(CarrierProfile.CarrierStatus.INACTIVE);
+        profile.setIsVerified(true);
+        profile.setStatus(CarrierProfile.CarrierStatus.ACTIVE);
         carrierProfileRepository.save(profile);
 
-        log.info("✅ Bank details {} by carrier: {} | Account: {} | Bank: {}",
-                isResubmission ? "re-submitted" : "submitted",
+        log.info("✅ Bank details {} + carrier activated: {} | Account: {} | Bank: {}",
+                isResubmission ? "updated" : "submitted",
                 userId, saved.getMaskedAccountNumber(), saved.getBankName());
 
-        // Notify admin
-        notifyAdminNewBankSubmission(carrier, saved, isResubmission);
+        // ✅ Create Razorpay linked account — reload fresh from DB after save
+        Long bankDetailsId = saved.getBankDetailsId();
+        String carrierUserId = carrier.getUserId();
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            BankDetails fresh = bankDetailsRepository.findById(bankDetailsId).orElseThrow();
+                            User freshCarrier = userRepository.findByUserId(carrierUserId).orElseThrow();
+                            razorpayRouteService.createLinkedAccount(freshCarrier, fresh);
+                            log.info("✅ Razorpay setup completed after commit for carrier: {}", carrierUserId);
+                        } catch (Exception e) {
+                            log.warn("⚠️ Razorpay setup failed after commit for carrier {}: {}", carrierUserId, e.getMessage());
+                        }
+                    }
+                }
+        );
 
-        // In-app notification
+        // ✅ Reload from DB to return latest data including Razorpay IDs
+        BankDetails finalSaved = bankDetailsRepository.findById(saved.getBankDetailsId())
+                .orElse(saved);
+
+        sendFcmNotification(
+                carrier.getFcmToken(),
+                isResubmission ? "Bank Details Updated ✅" : "Account Activated! 🎉",
+                isResubmission
+                        ? "Your bank details have been updated. Payouts will go to your new account."
+                        : "Your bank account is verified. You can now accept deliveries and receive payouts!"
+        );
+
         saveNotification(
                 carrier,
-                isResubmission ? "Bank Details Updated 🔄" : "Bank Details Submitted ✅",
-                "Your bank details have been submitted for review. We'll verify them within 1–2 business days.",
+                isResubmission ? "Bank Details Updated ✅" : "Account Activated! 🎉",
+                isResubmission
+                        ? "Your bank details have been updated successfully."
+                        : "Your bank account is set up. Start accepting deliveries!",
                 Notification.NotificationType.PAYMENT_RECEIVED
         );
 
-        return mapToResponse(saved);
+        return mapToResponse(finalSaved);
     }
 
     // =====================================================================
@@ -153,14 +183,18 @@ public class Bankdetailsservice {
         status.put("accountType", bd != null ? bd.getAccountType().toString() : null);
         status.put("verificationNote", bd != null ? bd.getVerificationNote() : null);
         status.put("canReceivePayouts", bd != null && Boolean.TRUE.equals(bd.getIsVerified()));
+        // ✅ Also expose Razorpay setup status in bank status endpoint
+        status.put("razorpaySetupComplete", bd != null && isValidFundAccountId(bd.getRazorpayFundAccountId()));
+        status.put("razorpaySetupStatus", bd != null ? resolveRazorpaySetupStatus(bd) : "NOT_SETUP");
 
         String msg = "Not submitted";
         if (bd != null) {
             switch (bd.getVerificationStatus()) {
-                case PENDING:      msg = "Submitted — awaiting review (1–2 business days)"; break;
-                case UNDER_REVIEW: msg = "Under review by our team"; break;
-                case VERIFIED:     msg = "Verified ✅ — you can now receive payouts"; break;
-                case REJECTED:     msg = "Rejected: " + (bd.getVerificationNote() != null ? bd.getVerificationNote() : "See details"); break;
+                case PENDING      -> msg = "Submitted — awaiting setup";
+                case UNDER_REVIEW -> msg = "Under review by our team";
+                case VERIFIED     -> msg = "Verified ✅ — you can now receive payouts";
+                case REJECTED     -> msg = "Rejected: " + (bd.getVerificationNote() != null
+                        ? bd.getVerificationNote() : "See details");
             }
         }
         status.put("statusMessage", msg);
@@ -168,13 +202,9 @@ public class Bankdetailsservice {
     }
 
     // =====================================================================
-    // IFSC LOOKUP — Auto-fill bank name and branch
+    // IFSC LOOKUP
     // =====================================================================
 
-    /**
-     * Razorpay hosts a free public IFSC API: https://ifsc.razorpay.com/{IFSC}
-     * No auth required.
-     */
     @Transactional(readOnly = true)
     public BankDetailsDto.IfscInfo lookupIfsc(String ifscCode) {
         if (ifscCode == null || ifscCode.length() != 11) {
@@ -196,7 +226,6 @@ public class Bankdetailsservice {
                     HttpResponse.BodyHandlers.ofString());
 
             if (httpResponse.statusCode() == 200) {
-                // Simple JSON parse without Jackson dependency on reactive
                 Map<?, ?> result = new com.fasterxml.jackson.databind.ObjectMapper()
                         .readValue(httpResponse.body(), Map.class);
                 return BankDetailsDto.IfscInfo.builder()
@@ -221,7 +250,7 @@ public class Bankdetailsservice {
     }
 
     // =====================================================================
-    // ADMIN — LIST ALL PENDING SUBMISSIONS
+    // ADMIN — LIST
     // =====================================================================
 
     @Transactional(readOnly = true)
@@ -246,98 +275,6 @@ public class Bankdetailsservice {
         BankDetails bd = bankDetailsRepository.findById(bankId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank details not found: " + bankId));
         return mapToAdminResponse(bd);
-    }
-
-    // =====================================================================
-    // ADMIN — VERIFY OR REJECT
-    // =====================================================================
-
-    @Transactional
-    @CacheEvict(value = {"profiles", "users"}, allEntries = true) // ← ADD THIS
-    public BankDetailsDto.Response adminVerifyBankDetails(Long bankId, String adminUserId,
-                                                          BankDetailsDto.VerifyRequest req) {
-        BankDetails bd = bankDetailsRepository.findById(bankId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bank details not found: " + bankId));
-
-        if (bd.getVerificationStatus() == BankDetails.VerificationStatus.VERIFIED) {
-            throw new IllegalStateException("Bank details are already verified.");
-        }
-
-        String action = req.getAction() != null ? req.getAction().toUpperCase() : "";
-
-        if ("APPROVE".equals(action)) {
-            bd.setIsVerified(true);
-            bd.setVerificationStatus(BankDetails.VerificationStatus.VERIFIED);
-            bd.setVerificationNote(null);
-            bd.setVerifiedAt(LocalDateTime.now());
-            bd.setVerifiedBy(adminUserId);
-
-            // ✅ Activate carrier profile
-            CarrierProfile profile = bd.getCarrierProfile();
-            profile.setIsVerified(true);
-            profile.setStatus(CarrierProfile.CarrierStatus.ACTIVE);
-            carrierProfileRepository.save(profile);
-
-            User carrier = profile.getUser();
-            log.info("✅ Bank details APPROVED for carrier: {} by admin: {}",
-                    carrier.getUserId(), adminUserId);
-
-            // ✅ Register carrier's bank with RazorpayX for future payouts
-            // This creates Contact + Fund Account so payout is instant at delivery time
-            razorpayPayoutService.createFundAccountForCarrier(carrier, bd);
-
-            // Notify carrier
-            sendFcmNotification(
-                    carrier.getFcmToken(),
-                    "Bank Details Verified ✅",
-                    "Your bank account has been verified! You can now receive payouts for deliveries."
-            );
-            saveNotification(
-                    carrier,
-                    "Bank Account Verified ✅",
-                    "Your bank details have been verified by our team. You can now receive payouts.",
-                    Notification.NotificationType.PAYMENT_RECEIVED
-            );
-
-        } else if ("REJECT".equals(action)) {
-            if (req.getNote() == null || req.getNote().trim().isEmpty()) {
-                throw new IllegalArgumentException("Rejection reason (note) is required.");
-            }
-
-            bd.setIsVerified(false);
-            bd.setVerificationStatus(BankDetails.VerificationStatus.REJECTED);
-            bd.setVerificationNote(req.getNote().trim());
-            bd.setVerifiedAt(null);
-            bd.setVerifiedBy(adminUserId);
-
-            // Keep carrier inactive
-            CarrierProfile profile = bd.getCarrierProfile();
-            profile.setIsVerified(false);
-            profile.setStatus(CarrierProfile.CarrierStatus.INACTIVE);
-            carrierProfileRepository.save(profile);
-
-            User carrier = profile.getUser();
-            log.info("❌ Bank details REJECTED for carrier: {} | Reason: {}", carrier.getUserId(), req.getNote());
-
-            // Notify carrier with reason
-            sendFcmNotification(
-                    carrier.getFcmToken(),
-                    "Bank Details Rejected ❌",
-                    "Your bank details were rejected: " + req.getNote() + ". Please update and resubmit."
-            );
-            saveNotification(
-                    carrier,
-                    "Bank Details Rejected ❌",
-                    "Reason: " + req.getNote() + ". Please update your bank details and resubmit.",
-                    Notification.NotificationType.PAYMENT_RECEIVED
-            );
-
-        } else {
-            throw new IllegalArgumentException("Invalid action: " + action + ". Must be APPROVE or REJECT.");
-        }
-
-        BankDetails saved = bankDetailsRepository.save(bd);
-        return mapToResponse(saved);
     }
 
     // =====================================================================
@@ -381,16 +318,50 @@ public class Bankdetailsservice {
         return val != null ? val.toString() : null;
     }
 
+    // ✅ Single source of truth for fund account ID validation — always trims
+    private boolean isValidFundAccountId(String fundId) {
+        if (fundId == null) return false;
+        String trimmed = fundId.trim();
+// ✅ FIXED
+        boolean valid = trimmed.startsWith("fa_") && trimmed.length() == 17;
+        if (!valid) {
+            log.warn("⚠️ Invalid fund account ID: '{}' (length={})", trimmed, trimmed.length());
+        }
+        return valid;
+    }
+
+    private String resolveRazorpaySetupStatus(BankDetails bd) {
+        if (bd.getRazorpayContactId() == null || bd.getRazorpayContactId().isBlank()) {
+            return "NOT_SETUP";
+        }
+        String fundId = bd.getRazorpayFundAccountId();
+        if (fundId == null || fundId.isBlank()) {
+            return "MISSING_FUND_ACCOUNT";
+        }
+        String trimmed = fundId.trim();
+        // ✅ FIXED
+        if (!trimmed.startsWith("fa_") || trimmed.length() != 17)
+            return "INVALID_FUND_ACCOUNT_ID (value='" + trimmed + "', length=" + trimmed.length() + ")";
+
+        return "COMPLETE";
+    }
+
     private BankDetailsDto.Response mapToResponse(BankDetails bd) {
         String statusMsg;
         String statusColor;
         switch (bd.getVerificationStatus()) {
-            case PENDING:      statusMsg = "Submitted — under review (1–2 business days)"; statusColor = "orange"; break;
-            case UNDER_REVIEW: statusMsg = "Under review by our team"; statusColor = "blue"; break;
-            case VERIFIED:     statusMsg = "Verified ✅"; statusColor = "green"; break;
-            case REJECTED:     statusMsg = "Rejected — " + (bd.getVerificationNote() != null ? bd.getVerificationNote() : "contact support"); statusColor = "red"; break;
-            default:           statusMsg = "Unknown"; statusColor = "grey";
+            case PENDING      -> { statusMsg = "Setting up your account..."; statusColor = "orange"; }
+            case UNDER_REVIEW -> { statusMsg = "Under review by our team";   statusColor = "blue";   }
+            case VERIFIED     -> { statusMsg = "Verified ✅";                statusColor = "green";  }
+            case REJECTED     -> { statusMsg = "Rejected — " + (bd.getVerificationNote() != null
+                    ? bd.getVerificationNote() : "contact support");         statusColor = "red";    }
+            default           -> { statusMsg = "Unknown";                    statusColor = "grey";   }
         }
+
+        // ✅ Always trim Razorpay IDs before returning and validating
+        String fundId    = bd.getRazorpayFundAccountId()       != null ? bd.getRazorpayFundAccountId().trim()       : null;
+        String contactId = bd.getRazorpayContactId()           != null ? bd.getRazorpayContactId().trim()           : null;
+        String upiVpaId  = bd.getRazorpayUpiVpaFundAccountId() != null ? bd.getRazorpayUpiVpaFundAccountId().trim() : null;
 
         return BankDetailsDto.Response.builder()
                 .bankId(bd.getBankDetailsId())
@@ -410,11 +381,21 @@ public class Bankdetailsservice {
                 .canReceivePayouts(Boolean.TRUE.equals(bd.getIsVerified()))
                 .statusMessage(statusMsg)
                 .statusColor(statusColor)
+                .razorpayContactId(contactId)
+                .razorpayFundAccountId(fundId)           // ✅ trimmed
+                .razorpayUpiVpaFundAccountId(upiVpaId)
+                .razorpaySetupComplete(isValidFundAccountId(fundId)) // ✅ uses trimmed value
                 .build();
     }
 
     private BankDetailsDto.AdminResponse mapToAdminResponse(BankDetails bd) {
         User carrier = bd.getCarrierProfile().getUser();
+
+        // ✅ Always trim Razorpay IDs
+        String fundId    = bd.getRazorpayFundAccountId()       != null ? bd.getRazorpayFundAccountId().trim()       : null;
+        String contactId = bd.getRazorpayContactId()           != null ? bd.getRazorpayContactId().trim()           : null;
+        String upiVpaId  = bd.getRazorpayUpiVpaFundAccountId() != null ? bd.getRazorpayUpiVpaFundAccountId().trim() : null;
+
         return BankDetailsDto.AdminResponse.builder()
                 .bankId(bd.getBankDetailsId())
                 .carrierId(carrier.getUserId())
@@ -422,7 +403,7 @@ public class Bankdetailsservice {
                 .carrierPhone(carrier.getMobile())
                 .carrierEmail(carrier.getEmail())
                 .accountHolderName(bd.getAccountHolderName())
-                .accountNumber(bd.getAccountNumber())   // Full number for admin
+                .accountNumber(bd.getAccountNumber())
                 .maskedAccountNumber(bd.getMaskedAccountNumber())
                 .ifscCode(bd.getIfscCode())
                 .bankName(bd.getBankName())
@@ -436,48 +417,12 @@ public class Bankdetailsservice {
                 .verifiedBy(bd.getVerifiedBy())
                 .createdAt(bd.getCreatedAt())
                 .updatedAt(bd.getUpdatedAt())
+                .razorpayContactId(contactId)
+                .razorpayFundAccountId(fundId)           // ✅ trimmed
+                .razorpayUpiVpaFundAccountId(upiVpaId)
+                .razorpaySetupComplete(isValidFundAccountId(fundId)) // ✅ uses trimmed value
+                .razorpaySetupStatus(resolveRazorpaySetupStatus(bd))
                 .build();
-    }
-
-    private void notifyAdminNewBankSubmission(User carrier, BankDetails bd, boolean isResubmission) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(adminEmail);
-            helper.setSubject("[Saffari Carriers] " +
-                    (isResubmission ? "Bank Details Re-submitted" : "New Bank Details — Verification Required"));
-
-            String html = String.format("""
-                <h2>%s</h2>
-                <table border="1" cellpadding="8" style="border-collapse:collapse;">
-                  <tr><td><b>Carrier Name</b></td><td>%s</td></tr>
-                  <tr><td><b>Carrier ID</b></td><td>%s</td></tr>
-                  <tr><td><b>Phone</b></td><td>%s</td></tr>
-                  <tr><td><b>Account Holder</b></td><td>%s</td></tr>
-                  <tr><td><b>Account Number</b></td><td>%s</td></tr>
-                  <tr><td><b>IFSC</b></td><td>%s</td></tr>
-                  <tr><td><b>Bank</b></td><td>%s</td></tr>
-                  <tr><td><b>Branch</b></td><td>%s</td></tr>
-                  <tr><td><b>Account Type</b></td><td>%s</td></tr>
-                  <tr><td><b>UPI ID</b></td><td>%s</td></tr>
-                  <tr><td><b>Submitted At</b></td><td>%s</td></tr>
-                </table>
-                <br/>
-                <p>Please review and verify/reject in the admin panel.</p>
-                """,
-                    isResubmission ? "Re-submitted Bank Details" : "New Bank Details Submission",
-                    carrier.getFullName(), carrier.getUserId(), carrier.getMobile(),
-                    bd.getAccountHolderName(), bd.getAccountNumber(),
-                    bd.getIfscCode(), bd.getBankName(), bd.getBranchName(),
-                    bd.getAccountType(), bd.getUpiId() != null ? bd.getUpiId() : "N/A",
-                    bd.getCreatedAt()
-            );
-            helper.setText(html, true);
-            mailSender.send(message);
-            log.info("✉️ Admin notified of bank details submission for carrier: {}", carrier.getUserId());
-        } catch (Exception e) {
-            log.error("❌ Failed to send admin email: {}", e.getMessage());
-        }
     }
 
     private void sendFcmNotification(String fcmToken, String title, String body) {

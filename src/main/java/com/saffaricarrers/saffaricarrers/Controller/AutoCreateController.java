@@ -94,4 +94,17 @@ public class AutoCreateController {
                     .body(Map.of("error", "Failed to auto-create package: " + e.getMessage()));
         }
     }
+    @PostMapping("/rider-accept")
+    public ResponseEntity<?> riderAcceptPackage(
+            @RequestHeader("userId") String riderId,
+            @RequestBody Map<String, Object> body) {
+        try {
+            Long packageId = Long.valueOf(body.get("packageId").toString());
+            AutoCreateResult result = autoCreateService.autoCreateRouteAndAcceptForRider(riderId, packageId);
+            return ResponseEntity.ok(Map.of("success", true, "requestId", result.getRequestId(), "data", result));
+        } catch (Exception e) {
+            log.error("riderAcceptPackage error for riderId={}: {}", riderId, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
 }

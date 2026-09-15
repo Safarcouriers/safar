@@ -21,6 +21,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByDeliveryRequest_RequestId(Long requestId);
 
+    // ✅ NEW — required for QR payment status lookup
+    Optional<Payment> findByQrId(String qrId);
+
     List<Payment> findByDeliveryRequest_Carrier_UserIdAndPaymentMethodAndPaymentStatus(
             String carrierId,
             Payment.PaymentMethod method,
@@ -46,6 +49,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
           AND p.carrierTransferInitiatedAt < :cutoff
     """)
     List<Payment> findStuckPayouts(@Param("cutoff") LocalDateTime cutoff);
+
     @Query("SELECT COALESCE(SUM(p.totalAmount), 0.0) FROM Payment p " +
             "WHERE p.paymentStatus = :status " +
             "AND p.paymentCompletedAt BETWEEN :from AND :to")
@@ -75,5 +79,4 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "GROUP BY CAST(p.paymentCompletedAt AS date)")
     List<Object[]> sumCommissionGroupByDate(
             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
-
 }

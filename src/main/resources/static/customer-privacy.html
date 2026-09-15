@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Safar Couriers</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0e11;--surface:#141518;--surface2:#1c1d22;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f0f0;--muted:#888a93;--accent:#e8ff57;
+  --accent-dim:rgba(232,255,87,0.1);--accent-border:rgba(232,255,87,0.3);
+  --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);
+  --green:#3ecf8e;--green-dim:rgba(62,207,142,0.1);
+  --font:'DM Sans',sans-serif;--radius:10px;--radius-lg:14px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.7}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:860px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#0d0e11;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.hero{background:linear-gradient(135deg,rgba(96,165,250,0.06) 0%,rgba(167,139,250,0.04) 100%);border-bottom:1px solid var(--border);padding:48px 24px}
+.hero-inner{max-width:860px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--blue-dim);border:1px solid rgba(96,165,250,0.3);color:var(--blue);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;margin-bottom:16px}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);display:inline-block}
+.hero h1{font-size:32px;font-weight:600;line-height:1.2;margin-bottom:12px}
+.hero p{font-size:14px;color:var(--muted);max-width:560px}
+.hero-meta{display:flex;gap:24px;margin-top:20px;font-size:12px;color:var(--muted)}
+.content-wrap{max-width:860px;margin:0 auto;padding:40px 24px 80px;display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start}
+.toc{position:sticky;top:80px}
+.toc-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:12px}
+.toc-list{list-style:none}
+.toc-list li{margin-bottom:2px}
+.toc-list a{display:block;padding:6px 10px;border-radius:6px;font-size:12px;color:var(--muted);text-decoration:none;transition:all .15s;border-left:2px solid transparent}
+.toc-list a:hover{background:var(--surface2);color:var(--text)}
+.toc-list a.active{background:var(--blue-dim);color:var(--blue);border-left-color:var(--blue)}
+.doc{min-width:0}
+.section{margin-bottom:40px;padding-bottom:40px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-num{display:inline-block;font-size:11px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.section h2{font-size:20px;font-weight:600;margin-bottom:14px;scroll-margin-top:90px}
+.section p{color:rgba(240,240,240,.8);margin-bottom:12px;font-size:14px}
+.section ul,.section ol{padding-left:20px;margin-bottom:12px}
+.section li{color:rgba(240,240,240,.8);font-size:14px;margin-bottom:6px}
+.section li::marker{color:var(--blue)}
+.highlight-box{background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:16px 0}
+.highlight-box p{margin:0;font-size:13px;color:var(--muted)}
+.highlight-box strong{color:var(--text)}
+.data-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.data-table th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border2);color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500}
+.badge-green{background:var(--green-dim);color:var(--green)}
+.badge-blue{background:var(--blue-dim);color:var(--blue)}
+.badge-orange{background:rgba(246,166,35,.1);color:#f6a623}
+.contact-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:20px;margin-top:16px}
+.contact-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.contact-row:last-child{border-bottom:none}
+.contact-label{color:var(--muted);min-width:80px;font-size:12px}
+.contact-val{color:var(--text)}
+.rights-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.right-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.right-icon{font-size:18px;margin-bottom:8px}
+.right-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.right-desc{font-size:12px;color:var(--muted)}
+footer{background:var(--surface);border-top:1px solid var(--border);padding:24px;text-align:center;font-size:12px;color:var(--muted)}
+footer a{color:var(--blue);text-decoration:none}
+@media(max-width:700px){.content-wrap{grid-template-columns:1fr}.toc{display:none}.hero h1{font-size:24px}.rights-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <a class="logo" href="#">
+            <div class="logo-mark">SC</div>
+            <div><div class="logo-text">Safar Couriers</div><div class="logo-sub">Admin Panel</div></div>
+        </a>
+    </div>
+</header>
+
+<div class="hero">
+    <div class="hero-inner">
+        <div class="hero-tag"><span class="hero-dot"></span> Legal Document</div>
+        <h1>Privacy Policy</h1>
+        <p>We take your privacy seriously. This policy explains what personal information we collect, how we use it, and the rights you have over your data when using the Safar Couriers platform.</p>
+        <div class="hero-meta">
+            <span>Effective: January 1, 2025</span>
+            <span>Last updated: April 14, 2026</span>
+            <span>Version 1.0</span>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrap">
+    <nav class="toc">
+        <div class="toc-title">Contents</div>
+        <ul class="toc-list">
+            <li><a href="#overview" class="active">1. Overview</a></li>
+            <li><a href="#collect">2. Data We Collect</a></li>
+            <li><a href="#use">3. How We Use Data</a></li>
+            <li><a href="#sharing">4. Data Sharing</a></li>
+            <li><a href="#storage">5. Data Storage</a></li>
+            <li><a href="#cookies">6. Cookies &amp; Tracking</a></li>
+            <li><a href="#rights">7. Your Rights</a></li>
+            <li><a href="#children">8. Children's Privacy</a></li>
+            <li><a href="#security">9. Security</a></li>
+            <li><a href="#changes">10. Policy Changes</a></li>
+            <li><a href="#contact">11. Contact Us</a></li>
+        </ul>
+    </nav>
+
+    <div class="doc">
+
+        <div class="section" id="overview">
+            <div class="section-num">01</div>
+            <h2>Overview</h2>
+            <p>Safar Couriers ("we", "our", or "us") is committed to protecting the privacy of our users. This Privacy Policy applies to information we collect through our mobile application and website ("Platform").</p>
+            <p>We process personal data in compliance with the Information Technology Act, 2000, the Information Technology (Amendment) Act, 2008, and applicable data protection rules under Indian law.</p>
+            <div class="highlight-box"><p><strong>In short:</strong> We collect only what we need to run the platform, we don't sell your data, and we give you control over your information.</p></div>
+        </div>
+
+        <div class="section" id="collect">
+            <div class="section-num">02</div>
+            <h2>Data We Collect</h2>
+            <p>We collect information you provide directly to us and information generated automatically when you use the Platform:</p>
+
+            <table class="data-table">
+                <thead><tr><th>Category</th><th>Data Collected</th><th>Required</th></tr></thead>
+                <tbody>
+                <tr><td><strong>Identity</strong></td><td>Full name, date of birth, gender</td><td><span class="badge badge-green">Required</span></td></tr>
+                <tr><td><strong>Contact</strong></td><td>Mobile number, email address</td><td><span class="badge badge-green">Required</span></td></tr>
+                <tr><td><strong>Government ID</strong></td><td>Aadhaar number, PAN card number, ID images</td><td><span class="badge badge-green">Required for carriers</span></td></tr>
+                <tr><td><strong>Financial</strong></td><td>Bank account details, UPI ID, payment history</td><td><span class="badge badge-green">Required for carriers</span></td></tr>
+                <tr><td><strong>Location</strong></td><td>Trip origin/destination, real-time location during delivery</td><td><span class="badge badge-green">Required</span></td></tr>
+                <tr><td><strong>Device</strong></td><td>Device model, OS version, FCM token for push notifications</td><td><span class="badge badge-blue">Automatic</span></td></tr>
+                <tr><td><strong>Usage</strong></td><td>App activity, feature usage, crash reports</td><td><span class="badge badge-blue">Automatic</span></td></tr>
+                <tr><td><strong>Communications</strong></td><td>Messages between senders and carriers, support conversations</td><td><span class="badge badge-orange">When used</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section" id="use">
+            <div class="section-num">03</div>
+            <h2>How We Use Your Data</h2>
+            <p>We use collected data for the following purposes:</p>
+            <ul>
+                <li><strong>Account creation and management</strong> — to register and authenticate your account</li>
+                <li><strong>Identity verification</strong> — to verify carriers using Aadhaar and PAN documents for safety</li>
+                <li><strong>Service delivery</strong> — to match senders with carriers and facilitate deliveries</li>
+                <li><strong>Payment processing</strong> — to process payments via Razorpay and disburse carrier payouts</li>
+                <li><strong>Push notifications</strong> — to send delivery updates and important alerts via Firebase Cloud Messaging</li>
+                <li><strong>Customer support</strong> — to respond to queries and resolve disputes</li>
+                <li><strong>Safety &amp; fraud prevention</strong> — to detect and prevent fraudulent transactions</li>
+                <li><strong>Platform improvement</strong> — to analyze usage patterns and improve our services</li>
+                <li><strong>Legal compliance</strong> — to comply with applicable laws and regulatory requirements</li>
+            </ul>
+            <div class="highlight-box"><p><strong>We do not</strong> sell, rent, or trade your personal information to third parties for marketing purposes.</p></div>
+        </div>
+
+        <div class="section" id="sharing">
+            <div class="section-num">04</div>
+            <h2>Data Sharing</h2>
+            <p>We share your information only in the following circumstances:</p>
+            <ul>
+                <li><strong>Between users</strong> — Senders can see carrier name and contact number for their delivery, and vice versa. Full addresses are only shared at the time of pickup/delivery.</li>
+                <li><strong>Razorpay</strong> — We share necessary financial information with Razorpay to process payments and disburse payouts. Razorpay's privacy policy applies to data shared with them.</li>
+                <li><strong>Firebase (Google)</strong> — We use Firebase for push notifications and analytics. Device tokens are shared with Firebase/FCM.</li>
+                <li><strong>Cloud hosting</strong> — Your data is stored on secure cloud servers. Our infrastructure providers process data on our behalf under strict data processing agreements.</li>
+                <li><strong>Law enforcement</strong> — We may disclose information when required by law, court order, or government authority.</li>
+                <li><strong>Business transfers</strong> — In the event of a merger or acquisition, user data may be transferred to the new entity with prior notice to users.</li>
+            </ul>
+        </div>
+
+        <div class="section" id="storage">
+            <div class="section-num">05</div>
+            <h2>Data Storage &amp; Retention</h2>
+            <p>Your personal data is stored on secure servers. We retain your information for as long as your account is active or as needed to provide services.</p>
+            <p>Specific retention periods:</p>
+            <ul>
+                <li><strong>Account data</strong> — Retained for the duration of your account plus 2 years after closure</li>
+                <li><strong>Transaction records</strong> — Retained for 7 years for financial and legal compliance</li>
+                <li><strong>Identity documents</strong> — Retained for the duration of your account plus 1 year</li>
+                <li><strong>Communication logs</strong> — Retained for 1 year from the date of the conversation</li>
+                <li><strong>Device and usage data</strong> — Retained for 90 days on a rolling basis</li>
+            </ul>
+            <p>Upon account deletion, we will anonymize or delete your personal data within 30 days, except where retention is required by law.</p>
+        </div>
+
+        <div class="section" id="cookies">
+            <div class="section-num">06</div>
+            <h2>Cookies &amp; Tracking Technologies</h2>
+            <p>Our mobile application does not use browser cookies. However, we use similar technologies:</p>
+            <ul>
+                <li><strong>Device identifiers</strong> — We use your device's unique identifier to maintain your session and provide a personalized experience</li>
+                <li><strong>FCM tokens</strong> — Firebase Cloud Messaging tokens are used to deliver push notifications to your device</li>
+                <li><strong>Analytics</strong> — We use analytics tools to understand how users interact with our app and to improve performance</li>
+            </ul>
+            <p>You can opt out of analytics tracking in your app settings. Opting out of push notifications may affect delivery alert functionality.</p>
+        </div>
+
+        <div class="section" id="rights">
+            <div class="section-num">07</div>
+            <h2>Your Privacy Rights</h2>
+            <p>You have the following rights regarding your personal data:</p>
+            <div class="rights-grid">
+                <div class="right-card">
+                    <div class="right-title">Access</div>
+                    <div class="right-desc">Request a copy of all personal data we hold about you</div>
+                </div>
+                <div class="right-card">
+                    <div class="right-title">Correction</div>
+                    <div class="right-desc">Update or correct inaccurate personal information</div>
+                </div>
+                <div class="right-card">
+                    <div class="right-title">Deletion</div>
+                    <div class="right-desc">Request deletion of your account and associated data</div>
+                </div>
+                <div class="right-card">
+                    <div class="right-title">Portability</div>
+                    <div class="right-desc">Receive your data in a structured, machine-readable format</div>
+                </div>
+                <div class="right-card">
+                    <div class="right-title">Opt-out</div>
+                    <div class="right-desc">Withdraw consent for non-essential data processing</div>
+                </div>
+                <div class="right-card">
+                    <div class="right-title">Complaint</div>
+                    <div class="right-desc">Lodge a complaint with us or relevant data protection authorities</div>
+                </div>
+            </div>
+            <p style="margin-top:16px">To exercise any of these rights, contact us at <span style="color:var(--blue)">support@safarcarry.com</span>. We will respond within 30 days of receiving your request.</p>
+        </div>
+
+        <div class="section" id="children">
+            <div class="section-num">08</div>
+            <h2>Children's Privacy</h2>
+            <p>The Safar Couriers Platform is not intended for individuals under the age of 18. We do not knowingly collect personal information from minors.</p>
+            <p>If we become aware that we have inadvertently collected personal information from a person under 18, we will take immediate steps to delete such information. If you believe a minor has provided us with personal information, please contact us immediately.</p>
+        </div>
+
+        <div class="section" id="security">
+            <div class="section-num">09</div>
+            <h2>Data Security</h2>
+            <p>We implement industry-standard security measures to protect your personal information:</p>
+            <ul>
+                <li>All data transmitted between the app and our servers is encrypted using TLS/SSL</li>
+                <li>Sensitive data such as bank account numbers are stored in masked/encrypted form</li>
+                <li>Access to personal data is restricted to authorized personnel only</li>
+                <li>We conduct regular security audits and vulnerability assessments</li>
+                <li>Payment processing is handled entirely by Razorpay — we never store full card numbers</li>
+                <li>Government ID images are stored securely with restricted access</li>
+            </ul>
+            <p>Despite our best efforts, no method of electronic storage or transmission is 100% secure. We cannot guarantee absolute security of your data. In the event of a data breach affecting your rights, we will notify you within 72 hours of becoming aware of the breach.</p>
+        </div>
+
+        <div class="section" id="changes">
+            <div class="section-num">10</div>
+            <h2>Changes to This Policy</h2>
+            <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. When we make material changes, we will:</p>
+            <ul>
+                <li>Update the "Last updated" date at the top of this policy</li>
+                <li>Send a push notification to all users via the app</li>
+                <li>Display an in-app notice for 30 days following the change</li>
+            </ul>
+            <p>Your continued use of the Platform after the effective date of the revised policy constitutes your acceptance of the changes. If you do not agree with the updated policy, you should stop using the Platform and delete your account.</p>
+        </div>
+
+        <div class="section" id="contact">
+            <div class="section-num">11</div>
+            <h2>Contact Us</h2>
+            <p>For any privacy-related questions, requests, or concerns, please contact our Data Protection team:</p>
+            <div class="contact-card">
+                <div class="contact-row"><span class="contact-label">Company</span><span class="contact-val">Safar Couriers</span></div>
+                <div class="contact-row"><span class="contact-label">Email</span><span class="contact-val" style="color:var(--blue)">support@safarcouriers.com</span></div>
+                <div class="contact-row"><span class="contact-label">Website</span><span class="contact-val" style="color:var(--blue)">https://www.safarcouriers.com/</span></div>
+                <div class="contact-row"><span class="contact-label">Address</span><span class="contact-val">Hyderabad, Telangana, India</span></div>
+                <div class="contact-row"><span class="contact-label">Response</span><span class="contact-val">Within 30 business days</span></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer>
+</footer>
+
+<script>
+const sections = document.querySelectorAll('.section');
+const links = document.querySelectorAll('.toc-list a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.toc-list a[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

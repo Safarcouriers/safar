@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Samskrithi Premium — Ancient Wisdom for Modern Kitchens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.6rem);
+      --text-3xl: clamp(2.8rem, 1rem + 4vw, 5.5rem);
+      --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-5: 1.25rem;
+      --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --space-20: 5rem; --space-24: 6rem;
+      --bg: #f7f2ea;
+      --surface: #fbf8f2;
+      --surface-2: #f1eadf;
+      --surface-3: #e8decf;
+      --text: #2c2319;
+      --muted: #6d5b45;
+      --faint: #9d8a70;
+      --line: rgba(44,35,25,.12);
+      --primary: #8c5c2a;
+      --primary-deep: #5e3a15;
+      --accent: #c9953f;
+      --leaf: #69764b;
+      --white: #fffdf8;
+      --shadow-sm: 0 2px 10px rgba(59,38,18,.06);
+      --shadow-md: 0 10px 30px rgba(59,38,18,.10);
+      --shadow-lg: 0 30px 80px rgba(59,38,18,.18);
+      --radius-sm: 10px;
+      --radius-md: 18px;
+      --radius-lg: 28px;
+      --radius-full: 999px;
+      --content: 1200px;
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body: 'Manrope', sans-serif;
+      --transition: 220ms cubic-bezier(.16,1,.3,1);
+    }
+    [data-theme="dark"] {
+      --bg: #16120e;
+      --surface: #1d1813;
+      --surface-2: #241d17;
+      --surface-3: #2c231a;
+      --text: #efe3d1;
+      --muted: #bca98d;
+      --faint: #907e67;
+      --line: rgba(255,240,220,.12);
+      --primary: #d4a154;
+      --primary-deep: #f0cf95;
+      --accent: #f1bf68;
+      --leaf: #96aa6c;
+      --white: #fff8ee;
+      --shadow-sm: 0 2px 10px rgba(0,0,0,.22);
+      --shadow-md: 0 10px 30px rgba(0,0,0,.28);
+      --shadow-lg: 0 30px 80px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: var(--text-base);
+    }
+    img { display: block; width: 100%; height: auto; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; }
+    .container { width: min(calc(100% - 2rem), var(--content)); margin: 0 auto; }
+    .section { padding: clamp(4rem, 8vw, 7rem) 0; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: .65rem; margin-bottom: 1rem;
+      font-size: var(--text-xs); letter-spacing: .26em; text-transform: uppercase; color: var(--accent); font-weight: 700;
+    }
+    .eyebrow::before { content: ''; width: 34px; height: 1px; background: currentColor; }
+    .section-head { display: grid; gap: 1rem; margin-bottom: 2.5rem; }
+    .section-head h2 {
+      font-family: var(--font-display); font-size: var(--text-2xl); line-height: 1.05; font-weight: 500; letter-spacing: -.02em;
+    }
+    .section-head p { max-width: 60ch; color: var(--muted); }
+    .skip-link {
+      position: absolute; left: 1rem; top: -3rem; background: var(--primary); color: var(--white); padding: .8rem 1rem; z-index: 999;
+      border-radius: var(--radius-sm);
+    }
+    .skip-link:focus { top: 1rem; }
+    .site-header {
+      position: fixed; inset: 0 0 auto 0; z-index: 50; transition: var(--transition);
+      background: rgba(247,242,234,.2); backdrop-filter: blur(18px);
+      border-bottom: 1px solid transparent;
+    }
+    [data-theme="dark"] .site-header { background: rgba(22,18,14,.45); }
+    .site-header.scrolled { border-color: var(--line); }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 82px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: .9rem; }
+    .brand-mark {
+      width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; box-shadow: var(--shadow-sm);
+    }
+    .brand-copy strong {
+      display: block; font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; line-height: .9;
+    }
+    .brand-copy span {
+      display: block; color: var(--faint); font-size: .68rem; text-transform: uppercase; letter-spacing: .22em; margin-top: .25rem;
+    }
+    .nav-links { display: flex; align-items: center; gap: 1.4rem; }
+    .nav-links a { font-size: var(--text-sm); color: var(--muted); }
+    .nav-actions { display: flex; align-items: center; gap: .75rem; }
+    .theme-toggle {
+      width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--text);
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .65rem; padding: .95rem 1.35rem; border-radius: var(--radius-full);
+      font-size: .82rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; transition: var(--transition);
+    }
+    .btn-primary { background: var(--primary); color: var(--white); box-shadow: var(--shadow-sm); }
+    .btn-primary:hover { transform: translateY(-2px); background: var(--primary-deep); }
+    .btn-secondary { border: 1px solid var(--line); color: var(--text); background: color-mix(in srgb, var(--surface) 88%, transparent); }
+    .hero {
+      position: relative; min-height: 100vh; display: grid; align-items: end; overflow: clip;
+      background:
+        linear-gradient(to bottom, rgba(37,25,14,.38), rgba(37,25,14,.62)),
+        url('https://pplx-res.cloudinary.com/image/upload/pplx_search_images/503d10f9bdb6c56184a16bdfecf5476fa187d96e.jpg') center/cover;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 15% 20%, rgba(212,161,84,.28), transparent 32%), radial-gradient(circle at 80% 30%, rgba(150,170,108,.18), transparent 24%);
+    }
+    .hero-shell {
+      position: relative; z-index: 2; padding: 8rem 0 3rem; display: grid; grid-template-columns: 1.2fr .8fr; gap: 2rem; align-items: end;
+    }
+    .hero-copy { color: #fff9f0; max-width: 720px; }
+    .hero-card {
+      display: grid; gap: 1.2rem; align-self: end; background: rgba(255,250,240,.1); border: 1px solid rgba(255,250,240,.18);
+      backdrop-filter: blur(12px); padding: 1.4rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    }
+    .hero-card img { aspect-ratio: 4/5; object-fit: cover; border-radius: calc(var(--radius-lg) - .7rem); }
+    .hero h1 {
+      font-family: var(--font-display); font-size: clamp(3.4rem, 7vw, 7rem); line-height: .92; font-weight: 500; letter-spacing: -.04em;
+      margin-bottom: 1rem;
+    }
+    .hero h1 em { color: #f0c777; font-style: italic; }
+    .hero p { max-width: 54ch; color: rgba(255,245,230,.82); font-size: 1.02rem; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: .9rem; margin-top: 2rem; }
+    .hero-metrics {
+      display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; margin-top: 2rem;
+    }
+    .metric {
+      background: rgba(255,248,236,.1); border: 1px solid rgba(255,248,236,.14); padding: 1rem 1.1rem; border-radius: 20px; backdrop-filter: blur(10px);
+    }
+    .metric strong { display: block; font-family: var(--font-display); font-size: 1.8rem; color: #ffd38f; }
+    .metric span { font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,245,230,.72); }
+    .feature-ribbon {
+      background: var(--primary-deep); color: #f8ecd8; overflow: hidden; border-top: 1px solid rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .ribbon-track {
+      display: flex; gap: 2.5rem; white-space: nowrap; padding: 1rem 0; animation: ribbon 24s linear infinite;
+      font-size: .74rem; text-transform: uppercase; letter-spacing: .22em;
+    }
+    @keyframes ribbon { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .story-grid, .ordering-grid, .community-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 4vw, 4rem); align-items: center; }
+    .media-stack { position: relative; }
+    .media-main {
+      border-radius: 32px; overflow: hidden; box-shadow: var(--shadow-lg); background: var(--surface-2);
+    }
+    .media-main img { aspect-ratio: 4/5; object-fit: cover; }
+    .floating-card {
+      position: absolute; right: -1rem; bottom: 1.5rem; width: min(280px, 70%);
+      background: var(--surface); border: 1px solid var(--line); padding: 1rem; border-radius: 24px; box-shadow: var(--shadow-md);
+    }
+    .floating-card strong { display: block; font-family: var(--font-display); font-size: 2rem; color: var(--primary); }
+    .floating-card p { color: var(--muted); font-size: .9rem; }
+    .pillars { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; margin-top: 2rem; }
+    .pillar {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 1.25rem; box-shadow: var(--shadow-sm);
+    }
+    .pillar h3 { margin-bottom: .45rem; font-size: 1rem; }
+    .pillar p { color: var(--muted); font-size: .92rem; }
+    .comparison {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--primary-deep) 94%, black), color-mix(in srgb, var(--primary-deep) 86%, black)); color: #f7eddf;
+    }
+    .comparison .section-head p { color: rgba(247,237,223,.72); }
+    .comparison-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+    }
+    .compare-card {
+      border-radius: 28px; padding: 2rem; border: 1px solid rgba(255,242,224,.10); background: rgba(255,248,236,.05);
+    }
+    .compare-card.good { background: linear-gradient(180deg, rgba(201,149,63,.16), rgba(150,170,108,.08)); border-color: rgba(212,161,84,.26); }
+    .compare-card h3 { font-family: var(--font-display); font-size: 2rem; margin-bottom: 1rem; }
+    .compare-card ul { list-style: none; display: grid; gap: .85rem; }
+    .compare-card li { display: flex; gap: .8rem; color: rgba(255,245,231,.82); }
+    .compare-card li::before { content: '•'; color: #f0c777; }
+    .photo-band {
+      display: grid; grid-template-columns: 1.3fr .9fr .9fr; gap: 1rem; margin-top: 2rem;
+    }
+    .photo-band .shot { border-radius: 24px; overflow: hidden; min-height: 260px; box-shadow: var(--shadow-md); }
+    .photo-band img { height: 100%; object-fit: cover; }
+    .products {
+      background: linear-gradient(180deg, var(--bg), var(--surface));
+    }
+    .products-top { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 2rem; }
+    .chip-row { display: flex; gap: .7rem; flex-wrap: wrap; }
+    .chip {
+      padding: .6rem .95rem; border-radius: 999px; font-size: .76rem; text-transform: uppercase; letter-spacing: .12em; border: 1px solid var(--line); color: var(--muted);
+      background: var(--surface);
+    }
+    .products-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1.25rem; }
+    .product-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 26px; overflow: hidden; box-shadow: var(--shadow-sm); transition: var(--transition);
+    }
+    .product-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+    .product-card img { aspect-ratio: 4/3; object-fit: cover; }
+    .product-body { padding: 1.2rem; }
+    .product-kicker { font-size: .68rem; text-transform: uppercase; letter-spacing: .14em; color: var(--faint); margin-bottom: .45rem; }
+    .product-card h3 { font-family: var(--font-display); font-size: 1.45rem; margin-bottom: .45rem; }
+    .product-card p { font-size: .9rem; color: var(--muted); margin-bottom: 1rem; }
+    .product-meta { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+    .product-meta strong { font-size: 1rem; color: var(--primary); }
+    .timeline {
+      display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 1rem;
+    }
+    .step {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 26px; padding: 1.5rem; box-shadow: var(--shadow-sm);
+    }
+    .step-no {
+      width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 1rem; background: var(--surface-2); color: var(--primary); font-weight: 800;
+    }
+    .step h3 { margin-bottom: .4rem; font-size: 1rem; }
+    .step p { color: var(--muted); font-size: .9rem; }
+    .edu-grid, .trust-grid, .testimonials-grid { display: grid; gap: 1.25rem; }
+    .edu-grid { grid-template-columns: 1.2fr .9fr .9fr; }
+    .edu-card, .trust-card, .quote-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 26px; overflow: hidden; box-shadow: var(--shadow-sm);
+    }
+    .edu-card img { aspect-ratio: 16/10; object-fit: cover; }
+    .edu-card.featured img { aspect-ratio: 4/5; }
+    .edu-card.featured { grid-row: span 2; }
+    .edu-content, .trust-card, .quote-card { padding: 1.25rem; }
+    .edu-content h3 { font-family: var(--font-display); font-size: 1.45rem; margin-bottom: .5rem; }
+    .edu-content p { color: var(--muted); font-size: .92rem; }
+    .trust-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .trust-card h3 { margin: .9rem 0 .45rem; }
+    .icon-badge {
+      width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, var(--surface)), color-mix(in srgb, var(--leaf) 18%, var(--surface)));
+      color: var(--primary);
+    }
+    .testimonials { background: var(--surface-2); }
+    .testimonials-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .quote-card p { color: var(--muted); }
+    .quote-mark { font-family: var(--font-display); font-size: 4rem; line-height: .7; color: var(--accent); }
+    .author { margin-top: 1rem; display: flex; align-items: center; gap: .9rem; }
+    .avatar {
+      width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--primary)); color: white; font-weight: 800;
+    }
+    .community-mosaic {
+      display: grid; grid-template-columns: 1.1fr .9fr; gap: 1rem;
+    }
+    .community-mosaic .big, .community-mosaic .small { border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-md); }
+    .community-mosaic .big img { aspect-ratio: 4/5; object-fit: cover; }
+    .stack { display: grid; gap: 1rem; }
+    .stack img { aspect-ratio: 4/3; object-fit: cover; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; margin-top: 1.75rem; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--line); padding: 1rem; border-radius: 22px;
+    }
+    .stat strong { display: block; font-family: var(--font-display); font-size: 2rem; color: var(--primary); }
+    .phone-wrap { display: flex; justify-content: center; }
+    .phone {
+      width: min(320px, 100%); background: #1f1812; border-radius: 36px; padding: 12px; box-shadow: var(--shadow-lg);
+    }
+    .phone-screen { background: #f8f1e7; border-radius: 28px; overflow: hidden; }
+    .phone-head { background: #3b2412; color: #fff2e0; padding: 1.6rem 1rem 1rem; display: flex; align-items: center; gap: .8rem; }
+    .phone-head strong { font-family: var(--font-display); font-size: 1.1rem; }
+    .chat { display: grid; gap: .8rem; padding: 1rem; }
+    .msg { max-width: 82%; padding: .8rem .9rem; border-radius: 16px; font-size: .82rem; line-height: 1.45; }
+    .msg.them { background: #fff; border: 1px solid rgba(59,36,18,.09); color: #5c4b3a; }
+    .msg.me { background: #d7af67; color: #2f1d0f; margin-left: auto; }
+    .cta-block {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 96%, black), color-mix(in srgb, var(--accent) 48%, var(--primary-deep)));
+      color: #fff6ea;
+      border-radius: 36px; padding: clamp(2rem, 4vw, 3rem); display: grid; grid-template-columns: 1.2fr .8fr; gap: 2rem; align-items: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .cta-block h2 { font-family: var(--font-display); font-size: var(--text-2xl); line-height: 1.02; }
+    .cta-block p { color: rgba(255,246,234,.82); margin-top: .9rem; max-width: 48ch; }
+    .cta-note {
+      background: rgba(255,246,234,.1); border: 1px solid rgba(255,246,234,.16); padding: 1.2rem; border-radius: 24px;
+    }
+    footer { padding: 2rem 0 3rem; }
+    .footer-bar {
+      display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding-top: 1.4rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem;
+    }
+    .mobile-toggle { display: none; }
+    @media (max-width: 1080px) {
+      .hero-shell, .story-grid, .ordering-grid, .community-grid, .cta-block, .edu-grid, .products-grid, .trust-grid, .testimonials-grid, .timeline, .comparison-grid, .photo-band { grid-template-columns: 1fr 1fr; }
+      .hero-card { max-width: 420px; }
+    }
+    @media (max-width: 820px) {
+      .nav-links { display: none; }
+      .mobile-toggle { display: inline-flex; }
+      .hero-shell, .story-grid, .ordering-grid, .community-grid, .cta-block, .comparison-grid, .photo-band, .products-grid, .timeline, .edu-grid, .trust-grid, .testimonials-grid, .community-mosaic, .stats-row, .pillars { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .hero-shell { padding-top: 7rem; }
+      .hero-card { order: -1; max-width: 100%; }
+      .hero-metrics { grid-template-columns: 1fr; }
+      .products-top, .footer-bar { flex-direction: column; align-items: flex-start; }
+      .floating-card { position: static; width: 100%; margin-top: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" id="siteHeader">
+    <div class="container nav">
+        <a href="#hero" class="brand" aria-label="Samskrithi home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C9.2 5.1 7 8.4 7 12a5 5 0 0 0 10 0c0-3.6-2.2-6.9-5-10Z" fill="currentColor"/>
+          </svg>
+        </span>
+            <span class="brand-copy">
+          <strong>Samskrithi</strong>
+          <span>Ancient wisdom for modern kitchens</span>
+        </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+            <a href="#story">Story</a>
+            <a href="#why">Why wood pressed</a>
+            <a href="#products">Products</a>
+            <a href="#education">Education</a>
+            <a href="#ordering">Order</a>
+        </nav>
+        <div class="nav-actions">
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>
+            </button>
+            <a class="btn btn-primary" href="#ordering">Order now</a>
+        </div>
+    </div>
+</header>
+
+<main id="main">
+    <section class="hero" id="hero">
+        <div class="container hero-shell">
+            <div class="hero-copy">
+                <div class="eyebrow">Rooted in ritual. Made for today.</div>
+                <h1>Bring <em>wood-pressed purity</em> back to the heart of your kitchen.</h1>
+                <p>Samskrithi turns a traditional Indian oil ritual into a premium, modern food experience — with small-batch extraction, beautiful ingredients, transparent sourcing, and a warm brand world that feels richer than a basic store page.</p>
+                <div class="hero-cta">
+                    <a class="btn btn-primary" href="#products">Explore oils</a>
+                    <a class="btn btn-secondary" href="#story">See the process</a>
+                </div>
+                <div class="hero-metrics">
+                    <div class="metric"><strong>100%</strong><span>Wood pressed process</span></div>
+                    <div class="metric"><strong>Small batch</strong><span>Crafted with low heat</span></div>
+                    <div class="metric"><strong>Real origin</strong><span>Seeds, farms, and stories</span></div>
+                </div>
+            </div>
+            <aside class="hero-card" aria-label="Featured product visual">
+                <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/259ae56b1f9a88f918f72305ab8993a5531bfa3e.jpg" alt="Wood pressed sesame oil bottle" width="3772" height="3772" loading="lazy" />
+                <div>
+                    <div class="eyebrow" style="margin-bottom:.6rem;">Featured drop</div>
+                    <h2 style="font-family:var(--font-display); font-size:2rem; color:#fff7ea;">Sesame oil with a richer shelf presence</h2>
+                    <p style="color:rgba(255,245,230,.74); margin-top:.4rem;">A premium hero composition replaces flat placeholders with real product photography and tactile styling.</p>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <div class="feature-ribbon" aria-hidden="true">
+        <div class="container">
+            <div class="ribbon-track">
+                <span>Traditional ghani extraction</span><span>•</span><span>Everyday cooking oils</span><span>•</span><span>Ingredient-led storytelling</span><span>•</span><span>Natural visual identity</span><span>•</span><span>Premium e-commerce look</span><span>•</span><span>Traditional ghani extraction</span><span>•</span><span>Everyday cooking oils</span><span>•</span><span>Ingredient-led storytelling</span><span>•</span><span>Natural visual identity</span><span>•</span><span>Premium e-commerce look</span>
+            </div>
+        </div>
+    </div>
+
+    <section class="section" id="story">
+        <div class="container story-grid">
+            <div class="media-stack">
+                <div class="media-main">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/7320a91072270a47c63be94c8de0ecb18b926a87.jpg" alt="Traditional wooden ghani oil extraction with bulls" width="1280" height="720" loading="lazy" />
+                </div>
+                <div class="floating-card">
+                    <strong>3000+ years</strong>
+                    <p>Traditional oil extraction methods still inspire the product story and give the page emotional depth.</p>
+                </div>
+            </div>
+            <div>
+                <div class="section-head">
+                    <div class="eyebrow">Our story</div>
+                    <h2>A heritage-first brand should feel tactile, warm, and alive — not plain.</h2>
+                    <p>The old site already had good structure and thoughtful content, but many sections were powered by abstract gradients instead of photography. This version keeps the strong narrative and upgrades it with real-world imagery, stronger contrast, cleaner spacing, and a more luxurious browsing rhythm.</p>
+                </div>
+                <div class="pillars">
+                    <article class="pillar"><h3>Better imagery</h3><p>Real bottles, spices, and village process photos replace placeholder blocks.</p></article>
+                    <article class="pillar"><h3>Premium layout</h3><p>Rounded editorial cards and layered sections give the brand more value perception.</p></article>
+                    <article class="pillar"><h3>Stronger CTA flow</h3><p>Key sections guide users toward products and ordering without feeling pushy.</p></article>
+                    <article class="pillar"><h3>Modern polish</h3><p>Sticky header, dark mode, richer typography, and mobile-ready cards make it feel current.</p></article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section comparison" id="why">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">Why wood pressed</div>
+                <h2>Show the difference instead of just telling it.</h2>
+                <p>This section keeps your educational angle but makes it more premium through contrast cards and supporting photography.</p>
+            </div>
+            <div class="comparison-grid">
+                <article class="compare-card">
+                    <h3>Refined oils</h3>
+                    <ul>
+                        <li>Industrial processing often strips away the romance and ritual people want from a heritage-led food brand.</li>
+                        <li>Generic commodity presentation makes every bottle feel interchangeable.</li>
+                        <li>Shoppers see function, but not story, provenance, or care.</li>
+                    </ul>
+                </article>
+                <article class="compare-card good">
+                    <h3>Wood-pressed oils</h3>
+                    <ul>
+                        <li>Low-heat traditional extraction creates a stronger story around purity and process.</li>
+                        <li>The brand can connect ingredients, farmers, kitchen rituals, and everyday wellness in one visual system.</li>
+                        <li>Packaging and storytelling feel premium when supported by rich imagery and grounded design.</li>
+                    </ul>
+                </article>
+            </div>
+            <div class="photo-band">
+                <div class="shot"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/4387c34c424c5284c72d944a2f157e7b4b651fa3.jpg" alt="Traditional oil pressing scene in India" width="1080" height="1920" loading="lazy" /></div>
+                <div class="shot"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/989717ef7d47333e192689ffe177966bab6d593d.jpg" alt="Amber oil in a small glass container with seeds" width="1800" height="1200" loading="lazy" /></div>
+                <div class="shot"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/eea371e834d7f11f730b36c7ba4a198ab7b8849c.jpg" alt="Indian herbs and spices flat lay" width="1024" height="682" loading="lazy" /></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section products" id="products">
+        <div class="container">
+            <div class="products-top">
+                <div class="section-head" style="margin-bottom:0;">
+                    <div class="eyebrow">Featured products</div>
+                    <h2>Your product grid now feels like a premium food brand.</h2>
+                    <p>Each card gets better hierarchy, softer surfaces, cleaner copy blocks, and actual product-led imagery.</p>
+                </div>
+                <div class="chip-row">
+                    <span class="chip">Daily cooking</span>
+                    <span class="chip">Traditional pantry</span>
+                    <span class="chip">Cold extracted</span>
+                </div>
+            </div>
+            <div class="products-grid">
+                <article class="product-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/259ae56b1f9a88f918f72305ab8993a5531bfa3e.jpg" alt="Wood pressed sesame oil bottle" width="3772" height="3772" loading="lazy" />
+                    <div class="product-body"><div class="product-kicker">Classic kitchen essential</div><h3>Sesame Oil</h3><p>Nutty aroma, deep finish, and a visual identity that now looks shelf-ready online.</p><div class="product-meta"><strong>Best for tempering</strong><a class="btn btn-secondary" href="#ordering">Buy</a></div></div>
+                </article>
+                <article class="product-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/cf3afdadbf8eb337461fbac391f1f13914325789.jpg" alt="Groundnut oil bottle with peanuts in background" width="800" height="600" loading="lazy" />
+                    <div class="product-body"><div class="product-kicker">Everyday family cooking</div><h3>Groundnut Oil</h3><p>Golden, familiar, and easy to position as the everyday premium choice.</p><div class="product-meta"><strong>Best for frying</strong><a class="btn btn-secondary" href="#ordering">Buy</a></div></div>
+                </article>
+                <article class="product-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/d4d2ad0b6ae2d2699efd6b921cf93d345ddec30d.jpg" alt="Cold pressed groundnut oil bottle on white background" width="1946" height="2919" loading="lazy" />
+                    <div class="product-body"><div class="product-kicker">Clean bottle presentation</div><h3>Daily Gold Series</h3><p>A polished packshot style that helps the catalog feel more trusted and premium.</p><div class="product-meta"><strong>Giftable look</strong><a class="btn btn-secondary" href="#ordering">Buy</a></div></div>
+                </article>
+                <article class="product-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/503d10f9bdb6c56184a16bdfecf5476fa187d96e.jpg" alt="Colorful herbs and spices flat lay on wooden surface" width="2940" height="1960" loading="lazy" />
+                    <div class="product-body"><div class="product-kicker">Ingredient storytelling</div><h3>Kitchen Ritual Bundle</h3><p>Use supporting ingredient photography to make bundles and combos more desirable.</p><div class="product-meta"><strong>Visual merchandising</strong><a class="btn btn-secondary" href="#ordering">Buy</a></div></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="journey">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">From seed to spoon</div>
+                <h2>A cleaner process section with cards that work well on mobile too.</h2>
+                <p>The original timeline idea was solid; this version simply gives it better spacing, surfaces, and readability.</p>
+            </div>
+            <div class="timeline">
+                <article class="step"><div class="step-no">01</div><h3>Source</h3><p>Choose seeds and ingredients that support a truthful origin story.</p></article>
+                <article class="step"><div class="step-no">02</div><h3>Press</h3><p>Use the wood-pressed narrative as the emotional and educational center of the brand.</p></article>
+                <article class="step"><div class="step-no">03</div><h3>Filter</h3><p>Keep the language simple, clear, and trustworthy.</p></article>
+                <article class="step"><div class="step-no">04</div><h3>Pack</h3><p>Present bottles like premium pantry objects, not generic commodities.</p></article>
+                <article class="step"><div class="step-no">05</div><h3>Deliver</h3><p>Finish with a friction-light ordering experience through WhatsApp or direct order flow.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="education">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">Education hub</div>
+                <h2>Turn content into trust-building editorial blocks.</h2>
+                <p>This makes your knowledge section feel like a premium journal instead of just filler cards.</p>
+            </div>
+            <div class="edu-grid">
+                <article class="edu-card featured">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/503d10f9bdb6c56184a16bdfecf5476fa187d96e.jpg" alt="Wooden surface flat lay of herbs and spices" width="2940" height="1960" loading="lazy" />
+                    <div class="edu-content"><h3>Why the kitchen remembers tradition through aroma, texture, and ritual</h3><p>Lead with a big editorial visual that instantly upgrades the perceived quality of the section.</p></div>
+                </article>
+                <article class="edu-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/9628bdd448bf05f8410ea5303120b81bd757f97b.jpg" alt="Farmer hand adding grains to traditional sowing device" width="1300" height="956" loading="lazy" />
+                    <div class="edu-content"><h3>Seed stories</h3><p>Link ingredients back to land, process, and hands.</p></div>
+                </article>
+                <article class="edu-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/366fb4e121da75ef74354db3bdc4e54583592c59.jpg" alt="Indian women farmers holding grains" width="1500" height="1125" loading="lazy" />
+                    <div class="edu-content"><h3>Farmer voices</h3><p>Use people-centered photography to add credibility and warmth.</p></div>
+                </article>
+                <article class="edu-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/989717ef7d47333e192689ffe177966bab6d593d.jpg" alt="Oil with seeds on rustic surface" width="1800" height="1200" loading="lazy" />
+                    <div class="edu-content"><h3>How to use it</h3><p>Short recipe pairings, heat notes, and storage guidance can sit here beautifully.</p></div>
+                </article>
+                <article class="edu-card">
+                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/eea371e834d7f11f730b36c7ba4a198ab7b8849c.jpg" alt="Indian spice flat lay on dark background" width="1024" height="682" loading="lazy" />
+                    <div class="edu-content"><h3>Ingredient notes</h3><p>Use visual education to make even small content blocks feel premium.</p></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="trust">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">Trust signals</div>
+                <h2>Good brands don’t just claim quality — they stage it clearly.</h2>
+                <p>Your reassurance section is redesigned into simpler, sharper trust cards that feel consistent with the rest of the site.</p>
+            </div>
+            <div class="trust-grid">
+                <article class="trust-card"><div class="icon-badge">✓</div><h3>Transparent sourcing</h3><p>Show where seeds come from and what the brand chooses not to compromise on.</p></article>
+                <article class="trust-card"><div class="icon-badge">◎</div><h3>Small batch handling</h3><p>Make the scale feel intentional and premium rather than limited.</p></article>
+                <article class="trust-card"><div class="icon-badge">◌</div><h3>Traditional extraction</h3><p>Keep the heritage story visible without making the page feel old-fashioned.</p></article>
+                <article class="trust-card"><div class="icon-badge">☆</div><h3>Kitchen-first utility</h3><p>Balance romance with practical buying confidence and usage clarity.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-head">
+                <div class="eyebrow">Testimonials</div>
+                <h2>Keep the warmth, lose the clutter.</h2>
+                <p>These cards are cleaner, more premium, and easier to scan than the earlier version.</p>
+            </div>
+            <div class="testimonials-grid">
+                <article class="quote-card"><div class="quote-mark">“</div><p>The new look instantly makes the oils feel premium, authentic, and gift-worthy rather than basic.</p><div class="author"><div class="avatar">A</div><div><strong>Ananya</strong><div style="color:var(--faint); font-size:.85rem;">Chennai home cook</div></div></div></article>
+                <article class="quote-card"><div class="quote-mark">“</div><p>I trust brands more when they show the process, the ingredients, and the people behind them this clearly.</p><div class="author"><div class="avatar">R</div><div><strong>Rohit</strong><div style="color:var(--faint); font-size:.85rem;">Everyday shopper</div></div></div></article>
+                <article class="quote-card"><div class="quote-mark">“</div><p>The website finally matches the kind of product story Samskrithi is trying to tell.</p><div class="author"><div class="avatar">M</div><div><strong>Meera</strong><div style="color:var(--faint); font-size:.85rem;">Wellness buyer</div></div></div></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="community">
+        <div class="container community-grid">
+            <div>
+                <div class="section-head">
+                    <div class="eyebrow">Community</div>
+                    <h2>People, ingredients, and origin visuals add soul to the brand.</h2>
+                    <p>Community sections work best when they feel lived in. This mosaic adds real-world context and makes the page feel far less generic.</p>
+                </div>
+                <div class="stats-row">
+                    <div class="stat"><strong>4x</strong><span>More visual richness</span></div>
+                    <div class="stat"><strong>Real</strong><span>Photography-led storytelling</span></div>
+                    <div class="stat"><strong>Better</strong><span>Premium brand perception</span></div>
+                </div>
+            </div>
+            <div class="community-mosaic">
+                <div class="big"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/2231947e19383c595bb964b8148071f5a6cf4c12.jpg" alt="Farmers working in field" width="1920" height="1079" loading="lazy" /></div>
+                <div class="stack">
+                    <div class="small"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/9628bdd448bf05f8410ea5303120b81bd757f97b.jpg" alt="Farmer hand with seeds" width="1300" height="956" loading="lazy" /></div>
+                    <div class="small"><img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/366fb4e121da75ef74354db3bdc4e54583592c59.jpg" alt="Women farmers holding grains" width="1500" height="1125" loading="lazy" /></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="ordering">
+        <div class="container ordering-grid">
+            <div>
+                <div class="section-head">
+                    <div class="eyebrow">Ordering flow</div>
+                    <h2>Make buying feel effortless, especially on mobile.</h2>
+                    <p>The earlier phone mockup idea was good. This refreshed version makes the screen cleaner and the CTA more premium, while keeping WhatsApp as a familiar low-friction channel.</p>
+                </div>
+                <div class="pillars" style="grid-template-columns:1fr;">
+                    <article class="pillar"><h3>Quick discovery</h3><p>Users can jump from storytelling sections directly to the order step without friction.</p></article>
+                    <article class="pillar"><h3>WhatsApp comfort</h3><p>Many buyers already trust chat-based ordering, especially for food and repeat purchases.</p></article>
+                    <article class="pillar"><h3>Premium cues</h3><p>Even the ordering section now feels brand-consistent instead of looking like a separate module.</p></article>
+                </div>
+                <div style="margin-top:1.5rem; display:flex; gap:.8rem; flex-wrap:wrap;">
+                    <a class="btn btn-primary" href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer">Order on WhatsApp</a>
+                    <a class="btn btn-secondary" href="#products">Browse catalog</a>
+                </div>
+            </div>
+            <div class="phone-wrap">
+                <div class="phone" aria-label="Mobile ordering preview">
+                    <div class="phone-screen">
+                        <div class="phone-head">
+                            <div class="avatar" style="width:38px;height:38px;">S</div>
+                            <div><strong>Samskrithi</strong><div style="font-size:.72rem; opacity:.75;">Premium pantry support</div></div>
+                        </div>
+                        <div class="chat">
+                            <div class="msg them">Hi! Looking for wood-pressed sesame oil or groundnut oil today?</div>
+                            <div class="msg me">Sesame oil for daily cooking. What size do you have?</div>
+                            <div class="msg them">500 ml and 1 litre. Fresh batch this week. Would you like the combo pack too?</div>
+                            <div class="msg me">Send the combo. Also share payment details.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="cta-block">
+                <div>
+                    <div class="eyebrow" style="color:#f4d08e;">Final call to action</div>
+                    <h2>Samskrithi now looks like a brand people can trust, remember, and buy from.</h2>
+                    <p>This redesign keeps your original content intent but upgrades the perceived value with stronger composition, real imagery, richer contrast, and cleaner conversion flow.</p>
+                    <div style="margin-top:1.4rem; display:flex; gap:.8rem; flex-wrap:wrap;">
+                        <a class="btn btn-primary" style="background:#f4d08e; color:#2d1c0f;" href="#products">View products</a>
+                        <a class="btn btn-secondary" style="border-color:rgba(255,246,234,.2); color:#fff6ea; background:rgba(255,246,234,.08);" href="#story">Review sections</a>
+                    </div>
+                </div>
+                <div class="cta-note">
+                    <strong style="display:block; margin-bottom:.5rem; font-size:1rem;">What changed</strong>
+                    <p style="color:rgba(255,246,234,.82);">Real product and origin imagery, better card design, cleaner trust sections, improved premium feel, and a more polished mobile-first order flow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container footer-bar">
+        <div>© 2026 Samskrithi. Crafted for a warmer, more premium online presence.</div>
+        <div>Designed with editorial structure, food imagery, and mobile-first polish.</div>
+    </div>
+</footer>
+
+<script>
+    const header = document.getElementById('siteHeader');
+    const root = document.documentElement;
+    const btn = document.querySelector('[data-theme-toggle]');
+    const setIcon = (mode) => {
+      btn.innerHTML = mode === 'dark'
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>';
+    };
+    const startDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', startDark ? 'dark' : 'light');
+    setIcon(startDark ? 'dark' : 'light');
+    btn.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      setIcon(next);
+    });
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 20);
+    });
+  </script>
+</body>
+</html>

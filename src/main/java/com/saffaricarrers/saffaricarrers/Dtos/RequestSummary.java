@@ -22,4 +22,6 @@ public class RequestSummary {
     private LocalDateTime requestedAt;
     private String senderNote;
     private String carrierNote;
+    private String pickUpDate;
+    private String dropDate;
 }
